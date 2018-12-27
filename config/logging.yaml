@@ -1,0 +1,54 @@
+#version: 1
+#root:
+#  level:INFO
+#  handlers:[file]
+
+version: 1
+root:
+  level: INFO
+  handlers: [console]
+
+#formatters:
+#  simple:
+#    format: '%(asctime)s-%(levelname)s-%(message)s'
+#
+
+formatters:
+  simple:
+    format: '%(asctime)s - %(levelname)s - %(message)s'
+
+handlers:
+#  vote:
+#    level: INFO
+#    class: logging.FileHandler
+#    formatter: simple
+#    filename: cw-mnist4-c6-iter1w.log
+  console:
+    level: INFO
+    class: logging.StreamHandler
+    formatter: simple
+    stream: ext://sys.stdout
+
+
+
+#version: 1
+#root:
+#  level: INFO
+#  handlers: [console, file]
+#
+#formatters:
+#  simple:
+#    format: '%(asctime)s - %(levelname)s - %(message)s'
+#
+#handlers:
+#  console:
+#    level: DEBUG
+#    class: logging.StreamHandler
+#    formatter: simple
+#    stream: ext://sys.stdout
+#  file:
+#    level: DEBUG
+#    class: logging.FileHandler
+#    formatter: simple
+#    filename: log.log
+
