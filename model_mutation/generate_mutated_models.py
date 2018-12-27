@@ -98,7 +98,7 @@ def mutated_hybrid_op(num_models, operator, seed, operator_types, save_path=None
     return mutated_models
 
 
-def large_mutated_model(model, model_name, test_loader, op_type, acc_tolerant, mutated_ration, num_mutated_models,
+def batch_mutated_model(model, model_name, test_loader, op_type, acc_tolerant, mutated_ration, num_mutated_models,
                         save_path, device):
     '''
 
@@ -174,7 +174,7 @@ def main():
     save_path = os.path.join(args.savePath, current_timestamp().replace(" ", "_"),
                              args.opType.lower() + str(args.mutatedRation))
 
-    large_mutated_model(model=seed_model,
+    batch_mutated_model(model=seed_model,
                         model_name=args.modelName,
                         test_loader=test_data_laoder,
                         num_mutated_models=args.numMModels,
@@ -231,7 +231,7 @@ def hard_code():
             # for ration, folder in zip([0.001, 0.003, 0.005], ['1e-3p', '3e-3p', '5e-3p']):
             op_type_name = op_type
             logging.info('operator type:{}'.format(op_type_name))
-            large_mutated_model(model=seed_model,
+            batch_mutated_model(model=seed_model,
                                 model_name=seed_md_name,
                                 test_loader=test_data_laoder,
                                 num_mutated_models=num_mutated_models,
