@@ -1,24 +1,23 @@
 import sys
-sys.path.append('../cifar10models/')
-from jsma import JSMA
-import torchvision
-import torch
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset, TensorDataset
-from util.data_manger import normalize_mnist, random_seed, datasetMutiIndx
+from utils.data_manger import *
 import math
 import torch.nn as nn
-from model_trainer import train
+from utils.model_trainer import train
 from jsma import get_jacobian
 from models import *
 import logging
-from util.logging_util import setup_logging
-from attack_util import *
+from utils.logging_util import setup_logging
+from attacks.attack_util import *
 from fgsm import *
 import torch.nn as nn
 import copy
-from cifar10models.lenet import LeNet
-from cifar10models.vgg import VGG
+import os
+from torch.utils.data import DataLoader
+from torch.utils.data import Dataset, TensorDataset
+from models.lenet import Cifar10Net
+
 
 
 
@@ -203,68 +202,6 @@ class BlackBox(object):
         return refined_adv_set
 
 
-
-def craft_mnist():
-    source_data = '../../datasets/mnist/raw'
-    torch.manual_seed(random_seed)
-    train_data,test_data = load_dataset(source_data, split=True)
-    target_model = torch.load('../model-storage/mnist/hetero-base/MnistNet4.pkl')
-    save_path = '../../datasets/mnist/adversarial/bb/single/non-pure/mnist4-fgsm35'
-    target_type = TRUELABEL
-    for step in range(1, 2):
-        print('#########step:{}#########'.format(step * 0.1))
-        subModel = ArchA()
-        bb = BlackBox(target_model=target_model, substitute_model=subModel,
-                      seed_data=datasetMutiIndx(test_data, range(150)),
-                      test_data=datasetMutiIndx(test_data, range(150, 10000)),
-                      max_iter=6, submodel_epoch=10, step=step * 0.1)
-        bb.substitute_training()
-        adversary = FGSM(bb.substitute_model, eps=0.35, target_type=target_type)
-        succeed_adv_samples = bb.do_craft(adversary, ConcatDataset([train_data, test_data]), save_path=save_path)
-        adv_laoder = DataLoader(dataset=succeed_adv_samples)
-        samples_filter(model=bb.substitute_model, loader=adv_laoder, name='substitue model')
-        samples_filter(model=target_model, loader=adv_laoder, name='source model')
-
-
-def craft_cifar10(device):
-
-    torch.manual_seed(random_seed)
-    source_data = '../../datasets/cifar10/raw'
-    target_model_name = 'googlenet.pkl'
-    test_data,channel = load_data_set(data_type=DATA_CIFAR10,source_data=source_data,train=False)
-    target_model = torch.load('../model-storage/cifar10/hetero-base/'+target_model_name)
-    eps = 0.03
-    adv_folder = target_model_name.split('.')[0]+'-eps-'+str(eps)
-    save_path = '../../datasets/cifar10/adversarial-pure/bb/single/pure/'+adv_folder
-    step = 0.3
-    # subModel = VGG('VGG11')
-    # subModel = ArchB()
-    subModel = LeNet()
-    seed_size = 200
-    indices = np.arange(10000)
-    np.random.seed(random_seed)
-    np.random.shuffle(indices)
-    bb = BlackBox(target_model=target_model, substitute_model=subModel,
-                  seed_data=datasetMutiIndx(test_data, indices[:seed_size]),
-                  test_data=datasetMutiIndx(test_data, indices[seed_size:]),
-                  max_iter=4, submodel_epoch=100, step=step * 0.05,device=device)
-    bb.substitute_training()
-    model_save_name = target_model_name.split('.')[0] + '-lenet-mimic.pkl'
-    torch.save(subModel,os.path.join(save_path, model_save_name))
-    adversary = FGSM(bb.substitute_model, eps=eps,device=device)
-    bb.do_craft(adversary, test_data, save_path=save_path,channels=3)
-    logging.info('Black-Box Done!')
-
-
-
-class gpu_test(nn.Module):
-    def __init__(self):
-        self.feature
-
-if __name__ == '__main__':
-    setup_logging()
-    # print('00000')
-    craft_cifar10(device='cuda:0')
 
 
 
