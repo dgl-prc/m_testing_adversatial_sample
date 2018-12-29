@@ -52,7 +52,7 @@ def mutated_single_op(num_models, operator, op_type, save_path=None, seed_md_nam
             if path and os.path.exists(path):  # proceed the progress
                 continue
             else:
-                torch.save(mutated_model, path)
+                torch.save(mutated_model.to("cpu").state_dict(), path)
         else:
             mutated_models.append(mutated_model)
 
@@ -90,7 +90,7 @@ def mutated_hybrid_op(num_models, operator, seed, operator_types, save_path=None
             if path and os.path.exists(path):  # proceed the progress
                 continue
             else:
-                torch.save(mutated_model, path)
+                torch.save(mutated_model.to("cpu").state_dict(), path)
         else:
             mutated_models.append(mutated_model)
 
@@ -124,11 +124,11 @@ def batch_mutated_model(model, model_name, test_loader, op_type, acc_tolerant, m
     mutated_single_op(num_mutated_models, operator, op_type, save_path, model_name)
 
 
-def main():
+def run():
     parser = argparse.ArgumentParser(description="The required parameters of mutation process")
 
     parser.add_argument("--modelName", type=str,
-                        help="The model's name,e.g, googlenet, lenet, or the self-defined name by users",
+                        help="The model's name,e.g, googlenet, lenet",
                         default="lenet")
     parser.add_argument("--modelPath", type=str, help="The the path of pretrained model(seed model).Note, the model should be saved as the form model.stat_dict")
     parser.add_argument("--accRation", type=float,
@@ -186,60 +186,5 @@ def main():
     print("The mutated models are stored in {}/{}".format(save_path,args.modelName))
 
 
-def hard_code():
-    torch.manual_seed(random_seed)
-
-    ###########
-    # CIFAR0 setting
-    ############
-    data_type = DATA_CIFAR10
-    data_name = 'cifar10'
-    seed_md_name = 'googlenet'
-
-    ###########
-    # mnsit setting
-    ############
-    # data_type = DATA_MNIST
-    # data_name = 'mnist'
-    # seed_md_name = 'MnistNet4'
-
-    ###########
-    # general setting
-    ###########
-    acc_tolerant = 0.9
-    num_mutated_models = 500
-
-    source_data = '../datasets/' + data_name + '/raw'
-    save_path = './model-storage/' + data_name + '/mutaed-models/'
-    model_path = './model-storage/' + data_name + '/hetero-base/'
-
-    ###########
-    # general
-    ###########
-    logging_util.setup_logging()
-    logging.info("data type:{}".format(data_name))
-    seed_model = torch.load(os.path.join(model_path, seed_md_name + '.pkl'))
-    test_data, channel = load_data_set(data_type, source_data=source_data)
-    test_data_laoder = DataLoader(dataset=test_data, batch_size=64, num_workers=4)
-    # OP_TYPE.NS,OP_TYPE.GF
-    # device = 'cuda:1' if torch.cuda.is_available() else 'cpu'
-    device = sys.argv[1]
-    device = 'cuda:' + device
-    for op_type in [OP_TYPE.GF]:
-        for ration, folder in zip([0.007], ['7e-3p']):
-            # for ration, folder in zip([0.01, 0.03, 0.05], ['1e-2p', '3e-2p', '5e-2p']):
-            # for ration, folder in zip([0.001, 0.003, 0.005], ['1e-3p', '3e-3p', '5e-3p']):
-            op_type_name = op_type
-            logging.info('operator type:{}'.format(op_type_name))
-            batch_mutated_model(model=seed_model,
-                                model_name=seed_md_name,
-                                test_loader=test_data_laoder,
-                                num_mutated_models=num_mutated_models,
-                                mutated_ration=ration,
-                                acc_tolerant=acc_tolerant,
-                                op_type=op_type,
-                                save_path=os.path.join(save_path, op_type_name.lower(), folder),
-                                device=device)
-
 if __name__ == '__main__':
-    main()
+    run()
