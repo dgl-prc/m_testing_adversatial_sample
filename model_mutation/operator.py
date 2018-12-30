@@ -237,7 +237,6 @@ class MutaionOperator(object):
 
     def afr(self, act_type):
         '''
-
         :param act_type: the type of activation func
         :return:
         '''

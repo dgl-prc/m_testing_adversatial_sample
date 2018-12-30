@@ -87,12 +87,11 @@ class ArchB(torch.nn.Module):
 
 
 class BlackBox(object):
-    def __init__(self, target_model, substitute_model, max_iter, seed_data, test_data, step, output_type=1, out_dim=10,
+    def __init__(self, target_model, substitute_model, max_iter, seed_data,step_size,test_data,output_type=1, out_dim=10,
                  submodel_epoch=15,device='cpu'):
         '''
         :param target_model:
-        :param max_iter:
-        :param step: control the magnitude of the perturbation added to the seed samples
+        :param max_iter: control the max iterations for substitute model's training
         :param output_type: 0,the target model outputs a label;1,the target model outputs a probability vector
         '''
 
@@ -103,7 +102,7 @@ class BlackBox(object):
         self.max_iter = max_iter
         self.seed_data = seed_data
         self.test_data = test_data
-        self.step = step
+        self.step=step_size
         self.output_type = output_type
         self.device = device
         self.target_model = target_model.to(self.device)

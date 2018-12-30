@@ -2,7 +2,7 @@ import abc
 import torch
 import torchvision
 import logging
-from attack_util import *
+from attacks.attack_util import *
 class AbstractAdversary(object):
     __metaclass__ = abc.ABCMeta
 

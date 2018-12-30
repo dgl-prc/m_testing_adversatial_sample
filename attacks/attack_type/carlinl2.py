@@ -2,10 +2,10 @@ import torch
 import sys
 
 sys.path.append('../')
-from util.data_manger import random_seed
+from utils.data_manger import random_seed
 from torch.utils.data import DataLoader
-from abstractAdversary import AbstractAdversary
-from util.pytorch_extend import batch_l2Norm_suqare
+from attacks.attack_type.abstractAdversary import AbstractAdversary
+from utils.pytorch_extend import batch_l2Norm_suqare
 
 
 class CarliniL2(AbstractAdversary):
@@ -118,10 +118,9 @@ class CarliniL2(AbstractAdversary):
 # to do: design a test pip line
 if __name__ == '__main__':
     import torchvision
-    from util.data_manger import normalize_mnist
-    from util.logging_util import setup_logging
+    from utils.data_manger import normalize_mnist
+    from utils.logging_util import setup_logging
     import logging
-    import os
 
     setup_logging()
 
