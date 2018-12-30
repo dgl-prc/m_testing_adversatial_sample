@@ -12,10 +12,10 @@ from scipy import ndimage
 from models import *
 from torchvision.utils import save_image
 
-from util.data_manger import *
+from utils.data_manger import *
 import itertools
 import time
-from attack_util import *
+from attacks.attack_util import *
 import numpy as np
 
 '''

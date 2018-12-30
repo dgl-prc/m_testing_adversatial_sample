@@ -1,6 +1,6 @@
 import torch
 import torch.nn.functional as F
-from abstractAdversary import AbstractAdversary
+from attacks.attack_type.abstractAdversary import AbstractAdversary
 import logging
 
 PREDICT=0
@@ -8,6 +8,16 @@ TRUELABEL=1
 class FGSM(AbstractAdversary):
 
     def __init__(self, model, criterion=F.nll_loss, eps=0.1, device='cpu',target_type=TRUELABEL):
+        '''
+
+        :param model:
+        :param criterion:
+        :param eps:
+        :param device:
+        :param target_type: there are two options: PREDICT or TRUELABEL. PREDICT means that the attack aims to deflect the
+        prediction results,e.g. the attack will change the predicted label. TRUELABEL means that the attack aims to make
+        a sample's prediction differ from its true label.
+        '''
         self.model = model.to(device)
         self.model.eval()
         self.eps = eps

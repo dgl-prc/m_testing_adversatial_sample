@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 
-
 #############
 # Function
 #############
@@ -14,10 +13,6 @@ get_char()
     stty echo
     stty $SAVEDSTTY
 }
-
-
-
-
 
 exe_file=../model_mutation/generate_mutated_models.py
 echo -e "NOTE: Our experiments are only based on two datasets: mnist and cifar10,\n
@@ -47,17 +42,6 @@ else
     echo "Tha above is the description of each paprameter. Please input them one by one."
     echo
     read -p "modelName:" modelName
-    #    read -p "Choose the seed model([1] lenet;[2] googlenet). Input the oder number:" modelChoice
-    #    if test "$modelChoice" = 1
-    #    then
-    #        modelName="lenet"
-    #    elif test "$modelChoice" = 2
-    #    then
-    #        modelName="googlenet"
-    #    else
-    #        echo "Invalid choice:"$modelChoice
-    #    fi
-
     read -p "modelPath:" modelPath
     read -p "accRation:" accRation
     read -p "dataType:" dataType

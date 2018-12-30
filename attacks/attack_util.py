@@ -1,13 +1,12 @@
 import sys
 
 sys.path.append('../')
-sys.path.append('../cifar10models')
 import logging
 import torch.nn.functional  as F
 from torch.utils.data import TensorDataset
 from torch.autograd.gradcheck import *
-from util.data_manger import *
 from scipy.misc import imsave
+from utils.data_manger import *
 
 
 class Adv_Tpye(object):
@@ -76,7 +75,7 @@ def adv_samples_filter(model, loader, name, size=0,
     print('{}: rename {}, remove {},success {}'.format(name,rename_count,remove_count,success_count))
 
 def samples_filter(model, loader, name, return_type="adv", use_adv_ground=False, size=0, show_progress=False,
-                   device='cpu', is_verbose=False):
+                   device='cpu', is_verbose=False,show_accuracy=True):
     '''
     :param model:
     :param loader:
@@ -146,7 +145,8 @@ def samples_filter(model, loader, name, return_type="adv", use_adv_ground=False,
 
     size = size if size > 0 else len(loader.dataset)
     test_loss /= size
-    print('\n{}: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)'.format(
+    if show_accuracy:
+        print('\n{}: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)'.format(
         name, test_loss, correct, size, 100. * correct / size))
     if return_type == 'adv':
         return adv_samples
@@ -267,46 +267,9 @@ def rename_advlabel_deflected_img(model, file_path, data_description='raw dgl-ci
     ]), show_file_name=True, img_mode=img_mode,max_size=10000)
     loader = DataLoader(dataset, batch_size=1, shuffle=False)
     # here, 'adv' means that those sampels whose predict label is not identical to the adv_lable
-
     adv_samples_filter(model, loader, data_description, 'adv', file_path=file_path,
                                     device=device)
-    # samples_filter(model, loader, data_description, 'adv', use_adv_ground=True, is_verbose=False,
-    #                                     device=device)
 
-# def recheck_advsamples():
-#     from util.logging_util import setup_logging
-#     setup_logging()
-#
-#     ########
-#     # mnsit
-#     ########
-#     data_soure = 'mnist'
-#     adversarial_folders = ['mnist4-eta3', 'mnist4-d12', 'mnist4-fgsm35', 'mnist4-c8-i1w', 'mnist4-0.02-50']
-#     adversarial_types = ['fgsm', 'jsma', 'bb', 'cw', 'deepfool']
-#     model_path = '../model-storage/mnist/hetero-base/MnistNet4.pkl'
-#     img_mode = 'L'
-#
-#     #########
-#     # cifar10
-#     #########
-#     # data_soure = 'cifar10'
-#     # adversarial_folders = ['lenet-eps-0.03', 'lenet-0.12', 'lenet-fgsm-eps-0.03', 'lenet-0.6-10000','mnist4-0.02-50']
-#     # adversarial_types = ['fgsm', 'jsma', 'bb', 'cw', 'deepfool']
-#     # model_path = '../model-storage/cifar10/hetero-base/lenet.pkl'
-#     img_mode = None
-#
-#     #########
-#     # general settings
-#     #########
-#     prefix_path = '../../datasets/' + data_soure + '/adversarial-pure/'
-#     midfix_path = 'single/pure/'
-#     model = torch.load(model_path)
-#
-#     for adv_type, folder in zip(adversarial_types, adversarial_folders):
-#         print('check {}-{}'.format(data_soure, adv_type))
-#         file_path = os.path.join(prefix_path, adv_type, midfix_path, folder)
-#         # remove_invalid_img(model, file_path, data_soure, img_mode=img_mode)
-#         remove_advlabel_deflected_img(model, file_path, data_soure, img_mode=img_mode)
 
 
 def get_file_name(old_file_name, new_adv_label):

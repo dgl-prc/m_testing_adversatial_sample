@@ -1,18 +1,35 @@
 
-import torch
+import re
 import os
+import copy
+import torch
+def NoModel(name):
+    '''
+     Get the serial No. of a given model's name
+    :param name: the model name.
+    :return:
+    '''
+    pattern = re.compile(".*-m(\d+).pkl")
+    match = pattern.match(name)
+    return int(match.group(1))
 
-def fetch_models(models_folder, num_models, seed_name, device, start_no=1):
+def fetch_models(models_folder, num_models,device, seed_model,start_no=1):
     '''
     :param models_folder:
     :param num_models: the number of models to be load
-    :param start_no: the start serial number from which loading  "num_models" models
+    :param start_no: the start serial number from which loading  "num_models" models. 1-index
     :return: the top [num_models] models in models_folder
     '''
-    No_models = range(start_no, start_no + num_models)
-    target_models_name = [seed_name + '-m' + str(i) for i in No_models]
+    files = os.listdir(models_folder)
+    files.sort(key=lambda x: NoModel(x))
+    if num_models + start_no <= len(files):
+        batch_models_name = files[start_no - 1:num_models + start_no-1]
+    else:
+        batch_models_name = files[start_no - 1:]
     target_models = []
-    for model_name in target_models_name:
-        target_models.append(torch.load(os.path.join(models_folder, seed_name, model_name + '.pkl')).to(device))
-        # logging.warning("loading {} ...".format(model_name))
+    for model_name in batch_models_name:
+        model = copy.deepcopy(seed_model)
+        model.load_state_dict(torch.load(os.path.join(models_folder, model_name)))
+
+        target_models.append(model.to(device))
     return target_models

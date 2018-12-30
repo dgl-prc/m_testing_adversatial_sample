@@ -134,27 +134,6 @@ def load_imagenet():
     print 'ok'
 
 
-@DeprecationWarning
-def load_dataset(data_path, split, normalize=normalize_mnist):
-    train_data = torchvision.datasets.MNIST(data_path,
-                                            train=True,
-                                            transform=transforms.Compose([
-                                                transforms.ToTensor(),
-                                                normalize
-                                            ]))
-
-    test_data = torchvision.datasets.MNIST(data_path,
-                                           train=False,
-                                           transform=transforms.Compose([
-                                               transforms.ToTensor(),
-                                               normalize
-                                           ]))
-
-    if split:
-        return train_data, test_data
-    else:
-        dataset = ConcatDataset([train_data, test_data])
-        return dataset
 
 
 def create_data_loader(batch_size, test_batch_size, train_data, test_data, use_cuda=False, seed=-1):

@@ -1,11 +1,10 @@
-from abstractAdversary import AbstractAdversary
+from attacks.attack_type.abstractAdversary import AbstractAdversary
 import numpy as np
 from torch.autograd import Variable
 import torch as torch
 import copy
 from torch.autograd.gradcheck import zero_gradients
-import torchvision.transforms as transforms
-from attack_util import save_imgs_tensor
+from attacks.attack_util import save_imgs_tensor
 
 class DeepFool(AbstractAdversary):
     def __init__(self, target_model, num_classes=10, overshoot=0.02, max_iter=50, device='cpu'):
@@ -96,9 +95,6 @@ class DeepFool(AbstractAdversary):
 if __name__ == '__main__':
     from util.data_manger import load_data_set, DATA_CIFAR10
     from torch.utils.data.dataloader import DataLoader
-    from cifar10models import lenet
-    from cifar10models.lenet import LeNet
-    import matplotlib.pyplot as plt
     import sys
     sys.path.append('../cifar10models/')
     test_data, channel = load_data_set(data_type=DATA_CIFAR10, source_data='../../datasets/cifar10/raw')

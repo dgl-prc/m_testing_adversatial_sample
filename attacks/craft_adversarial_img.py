@@ -2,15 +2,18 @@ from __future__ import print_function
 import sys
 
 sys.path.append('../')
-sys.path.append('../cifar10models/')
-from fgsm import FGSM
-from carlinl2 import CarliniL2
-from util.logging_util import *
-from jsma import *
-from deepfool import DeepFool
-from util.data_manger import DATA_CIFAR10
-from util.data_manger import load_cifar10, load_data_set
-from cifar10models import lenet
+from attacks.attack_type.fgsm import FGSM
+from attacks.attack_type.carlinl2 import CarliniL2
+from attacks.attack_type.blackBox import BlackBox
+from attacks.attack_type.jsma import *
+from attacks.attack_type import blackBox
+from attacks.attack_type.deepfool import DeepFool
+from utils.data_manger import *
+from models.googlenet import *
+from models import lenet
+import argparse
+from utils.time_util import current_timestamp
+
 
 '''
 This component has three levels
@@ -22,13 +25,13 @@ do_craft_? is designed to do attack for multil-models.
 
 The two levels are not bound with certain data
 
-The level, like craft_mnist,craft_cifar10,craft_imagenet,  is the application level,which is bound with certain level.
+The level, like craft_mnist,craft_cifar10,craft_imagenet,is the application level,which is bound with certain level.
 
 '''
 
 
-def genereate_fgsm_samples_for_large_data(model_path, source_data, save_path, eps, is_save=False, is_exclude_wr=True,
-                                          data_type=DATA_MNIST):
+def genereate_fgsm_samples_for_ImageNet(source_data, save_path, eps, is_save=False, is_exclude_wr=True,
+                                        data_type=DATA_MNIST):
     '''
 
     :param model_path:
@@ -66,9 +69,9 @@ def genereate_fgsm_samples_for_large_data(model_path, source_data, save_path, ep
     print('Done!')
 
 
-def genereate_jsma_samples_for_large_data(model_path, source_data, save_path, is_save=False, max_distortion=0.12,
-                                          dim_features=784,
-                                          num_out=10, data_type=DATA_MNIST, img_shape={'C': 3, 'H': 32, 'W': 32}):
+def genereate_jsma_samples_for_ImageNet(source_data, save_path, is_save=False, max_distortion=0.12,
+                                        dim_features=784,
+                                        num_out=10, data_type=DATA_MNIST, img_shape={'C': 3, 'H': 32, 'W': 32}):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     torch.manual_seed(random_seed)
     # train_data, _ =  load_data_set(data_type=data_type,source_data=source_data,train=True)
@@ -107,9 +110,9 @@ def genereate_jsma_samples_for_large_data(model_path, source_data, save_path, is
     print(success * 1. / progress)
 
 
-def genereate_cw_samples_for_large_data(model_path, source_data, save_path, is_save=False, c=0.8, iter=10000,
-                                        batch_size=1,
-                                        data_type=DATA_MNIST):
+def genereate_cw_samples_for_ImageNet(source_data, save_path, is_save=False, c=0.8, iter=10000,
+                                      batch_size=1,
+                                      data_type=DATA_MNIST):
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     # device = 'cpu'
     raw_test_data, channels = load_data_set(data_type, source_data)
@@ -123,7 +126,7 @@ def genereate_cw_samples_for_large_data(model_path, source_data, save_path, is_s
     step_size = 100
     start = 0
     for batch_no in range(10):
-        dataset = datasetMutiIndx(raw_test_data, random_samples[start:start+step_size])
+        dataset = datasetMutiIndx(raw_test_data, random_samples[start:start + step_size])
         test_data = exclude_wrong_labeled(target_model, dataset, device=device)
         test_loader = DataLoader(dataset=test_data, batch_size=1, num_workers=0)
         for i, data_pair in enumerate(test_loader):
@@ -136,16 +139,16 @@ def genereate_cw_samples_for_large_data(model_path, source_data, save_path, is_s
             success_samples, normal_labels, adv_label = l2Attack.check_adversarial_samples(l2Attack.target_model,
                                                                                            adv_samples, normal_preidct)
             if is_save:
-                save_imgs_tensor(success_samples, normal_labels, adv_label, save_path, 'cw', no_batch=batch_no*step_size+i,
+                save_imgs_tensor(success_samples, normal_labels, adv_label, save_path, 'cw',
+                                 no_batch=batch_no * step_size + i,
                                  batch_size=batch_size, channels=channels)
             logging.info('batch:{}'.format(i))
-        start +=step_size
+        start += step_size
 
 
-
-def genereate_deepfool_samples_for_large_data(model_path, source_data_path, save_path=None, overshoot=0.02, num_out=10,
-                                              max_iter=50,
-                                              data_type=DATA_MNIST):
+def genereate_deepfool_samples_for_ImageNet(source_data_path, save_path=None, overshoot=0.02, num_out=10,
+                                            max_iter=50,
+                                            data_type=DATA_MNIST):
     '''
     Single data only!Do not Support batch
     :return:
@@ -171,7 +174,7 @@ def genereate_deepfool_samples_for_large_data(model_path, source_data_path, save
     start = 4600
     batch_size = 100
     count = 881
-    for batch_no in range(9,24):
+    for batch_no in range(9, 24):
         test_data = datasetMutiIndx(raw_test_data, random_samples[start:start + batch_size])
         complete_data = exclude_wrong_labeled(model, test_data, device)
         test_data_laoder = DataLoader(dataset=complete_data, batch_size=1, shuffle=True)
@@ -186,14 +189,14 @@ def genereate_deepfool_samples_for_large_data(model_path, source_data_path, save
             if is_save:
                 save_imgs_tensor([adv_img.to('cpu')], [label], [adv_label], save_path, 'deepfool', no_batch=batch_no,
                                  batch_size=batch_size,
-                                 channels=channels,adv_count=count)
+                                 channels=channels, adv_count=count)
             logging.info('{}th finished'.format(count))
             count += 1
         start += batch_size
 
 
-def genereate_fgsm_samples(model_path, source_data, save_path, eps, is_save=False, is_exclude_wr=True,
-                           data_type=DATA_MNIST):
+def genereate_fgsm_samples(model, source_data, save_path, eps, is_exclude_wr=True,
+                           data_type=DATA_MNIST, device="cpu"):
     '''
 
     :param model_path:
@@ -204,8 +207,14 @@ def genereate_fgsm_samples(model_path, source_data, save_path, eps, is_save=Fals
     :param is_exclude_wr:  exclude the wrong labeled or not
     :return:
     '''
-    device = 'cuda:3' if torch.cuda.is_available() else 'cpu'
-    test_data, channel = load_data_set(data_type, source_data,train=False)
+
+    is_save = False
+    if save_path:
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        is_save = True
+
+    test_data, channel = load_data_set(data_type, source_data, train=False)
     if data_type == DATA_IMAGENET:
         model = torchvision.models.densenet121(pretrained=True)
         random_samples = np.arange(10000)
@@ -215,14 +224,13 @@ def genereate_fgsm_samples(model_path, source_data, save_path, eps, is_save=Fals
         test_data = exclude_wrong_labeled(model, dataset, device)
         test_loader = DataLoader(dataset=test_data, batch_size=1, num_workers=1)
     else:
-        model = torch.load(model_path)
         test_data = exclude_wrong_labeled(model, test_data, device)
         test_loader = DataLoader(dataset=test_data, batch_size=64, shuffle=False)
 
     fgsm = FGSM(model, eps=eps, device=device)
     adv_samples, y = fgsm.do_craft_batch(test_loader)
     adv_loader = DataLoader(TensorDataset(adv_samples, y), batch_size=1, shuffle=False)
-    succeed_adv_samples = samples_filter(model, adv_loader, "Eps={}".format(eps),device=device)
+    succeed_adv_samples = samples_filter(model, adv_loader, "Eps={}".format(eps), device=device)
     num_adv_samples = len(succeed_adv_samples)
     print('successful samples', num_adv_samples)
     if is_save:
@@ -230,11 +238,16 @@ def genereate_fgsm_samples(model_path, source_data, save_path, eps, is_save=Fals
     print('Done!')
 
 
-
-def genereate_cw_samples(model_path, source_data, save_path, is_save=False, c=0.8, iter=10000, batch_size=1,
-                         data_type=DATA_MNIST,device='cpu'):
+def genereate_cw_samples(target_model, source_data, save_path,c=0.8, iter=10000, batch_size=1,
+                         data_type=DATA_MNIST, device='cpu'):
     # at present, only  cuda0 suopport
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+    is_save = False
+    if save_path:
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        is_save = True
+
     test_data, channels = load_data_set(data_type, source_data)
     if data_type == DATA_IMAGENET:
         target_model = torchvision.models.densenet121(pretrained=True)
@@ -245,12 +258,11 @@ def genereate_cw_samples(model_path, source_data, save_path, is_save=False, c=0.
         test_data = exclude_wrong_labeled(target_model, dataset, device=device)
         test_loader = DataLoader(dataset=test_data, batch_size=128, num_workers=3)
     else:
-        target_model = torch.load(model_path)
-        test_data = exclude_wrong_labeled(target_model, test_data,device=device)
+        test_data = exclude_wrong_labeled(target_model, test_data, device=device)
         test_loader = DataLoader(dataset=test_data, batch_size=batch_size, shuffle=False)
 
     l2Attack = CarliniL2(target_model=target_model, max_iter=iter, c=c, k=0, device=device, targeted=False)
-
+    print("Generating adversarial sampels...")
     for i, data_pair in enumerate(test_loader):
         i += 1
         data, real_label = data_pair
@@ -270,11 +282,17 @@ def genereate_cw_samples(model_path, source_data, save_path, is_save=False, c=0.
             break
 
 
-def genereate_jsma_samples(model_path, source_data, save_path, is_save=False, max_distortion=0.12, dim_features=784,
-                           num_out=10, data_type=DATA_MNIST, img_shape={'C': 3, 'H': 32, 'W': 32},device = 'cpu'):
-    torch.manual_seed(random_seed)
+def genereate_jsma_samples(model, source_data, save_path,max_distortion=0.12, dim_features=784,
+                           num_out=10, data_type=DATA_MNIST, img_shape={'C': 3, 'H': 32, 'W': 32}, device='cpu'):
+
     # train_data, _ =  load_data_set(data_type=data_type,source_data=source_data,train=True)
     # complete_data = ConcatDataset([test_data,train_data])
+
+    is_save = False
+    if save_path:
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        is_save = True
 
     test_data, channels = load_data_set(data_type=data_type, source_data=source_data)
     if data_type == DATA_IMAGENET:
@@ -283,8 +301,7 @@ def genereate_jsma_samples(model_path, source_data, save_path, is_save=False, ma
         np.random.seed(random_seed)
         np.random.shuffle(random_samples)
         test_data = datasetMutiIndx(test_data, random_samples)
-    else:
-        model = torch.load(model_path)
+
     complete_data = exclude_wrong_labeled(model, test_data, device)
     test_data_laoder = DataLoader(dataset=complete_data, batch_size=1, shuffle=True)
 
@@ -292,6 +309,7 @@ def genereate_jsma_samples(model_path, source_data, save_path, is_save=False, ma
                 device=device, shape=img_shape)
     success = 0
     progress = 0
+
     all_lables = range(num_out)
     for data, label in test_data_laoder:
         data, label = data.to(device), label.to(device)
@@ -317,16 +335,18 @@ def genereate_jsma_samples(model_path, source_data, save_path, is_save=False, ma
     print(success * 1. / progress)
 
 
-def genereate_deepfool_samples(model_path, source_data_path, save_path=None, overshoot=0.02, num_out=10, max_iter=50,
-                               data_type=DATA_MNIST):
+def genereate_deepfool_samples(model, source_data_path, save_path=None, overshoot=0.02, num_out=10, max_iter=50,
+                               data_type=DATA_MNIST, device="cpu"):
     '''
     Single data only!Do not Support batch
     :return:
     '''
-    #######
-    # this part of code is identical with the genereate_jsma_samples
-    ######
-    device = 'cuda:3' if torch.cuda.is_available() else 'cpu'
+    is_save = False
+    if save_path:
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        is_save = True
+
     test_data, channels = load_data_set(data_type=data_type, source_data=source_data_path)
     if data_type == DATA_IMAGENET:
         model = torchvision.models.densenet121(pretrained=True)
@@ -334,19 +354,10 @@ def genereate_deepfool_samples(model_path, source_data_path, save_path=None, ove
         np.random.seed(random_seed)
         np.random.shuffle(random_samples)
         test_data = datasetMutiIndx(test_data, random_samples)
-    else:
-        model = torch.load(model_path)
 
     complete_data = exclude_wrong_labeled(model, test_data, device)
     test_data_laoder = DataLoader(dataset=complete_data, batch_size=1, shuffle=True)
-
     deepfool = DeepFool(target_model=model, num_classes=num_out, overshoot=overshoot, max_iter=max_iter, device=device)
-    is_save = False
-    if save_path:
-        if not os.path.exists(save_path):
-            os.makedirs(save_path)
-        is_save = True
-
     count = 1
     for data, label in test_data_laoder:
         data = data.squeeze(0)
@@ -363,217 +374,178 @@ def genereate_deepfool_samples(model_path, source_data_path, save_path=None, ove
         count += 1
 
 
-def model_cross_valid(prefix_model_path, prefix_save_path, model_list, adv_folder_list):
-    '''
-    :return:
-    '''
-    # Here we use a random seed to make sure that the result repeatable when run this function again.
-    # It mainly control the shuffle process in DataLoader
-    # torch.manual_seed(5566)
-    for model_name_A, save_folder in zip(model_list, adv_folder_list):
-        for model_name_B in model_list:
-            model = torch.load(os.path.join(prefix_model_path, model_name_B))
-            adv_file_path = os.path.join(prefix_save_path, save_folder)
-            [image_list, image_files, real_labels, predicted_labels] = load_adversary_data(adv_file_path,
-                                                                                           normalize_mnist)
-            torch.manual_seed(5566)
-            dataloader = DataLoader(TensorDataset(image_list, real_labels), batch_size=1, shuffle=True)
-            samples_filter(model, dataloader, '{} >> {}'.format("adv_" + model_name_A, model_name_B), size=2500)
+def genereate_balck_box_samples(target_model, source_data_path, save_path=None,eps=0.03,max_iter=6,
+                                submodel_epoch=10,seed_data_size=200,rnd_seed=random_seed,
+                                data_type=DATA_MNIST, step_size=1,device="cpu"):
+    is_save = False
+    if save_path:
+        if not os.path.exists(save_path):
+            os.makedirs(save_path)
+        is_save = True
+
+    if data_type == DATA_MNIST:
+        subModel = blackBox.ArchA()
+        test_data, channel = load_data_set(data_type=DATA_MNIST, source_data=source_data_path, train=False)
+        train_data, channel = load_data_set(data_type=DATA_MNIST, source_data=source_data_path, train=True)
+
+    elif data_type == DATA_CIFAR10:
+        subModel = lenet.Cifar10Net()
+        test_data, channel = load_data_set(data_type=DATA_MNIST, source_data=source_data_path, train=False)
 
 
-def do_craft_fgsm(prefix_model_path, prefix_save_path, model_list, eps=0.5, is_save=False,
-                  data_type=DATA_MNIST, source_data=None):
-    for model_name in model_list:
-        save_folder = model_name.split('.')[0]+'-eps-'+str(eps)
-        model_path = os.path.join(prefix_model_path, model_name)
-        save_path = os.path.join(prefix_save_path, save_folder)
-        print('>>>>Generate {} >>>>>>>>>>'.format(model_name))
-        if data_type == DATA_IMAGENET:
-            genereate_fgsm_samples_for_large_data(model_path, source_data, save_path, eps, is_save=is_save,
-                                                  data_type=data_type)
-        else:
-            genereate_fgsm_samples(model_path, source_data, save_path, eps, is_save=is_save, data_type=data_type)
+    indices = np.arange(10000)
+    np.random.seed(rnd_seed)
+    np.random.shuffle(indices)
+    seed_data = datasetMutiIndx(test_data, indices[:seed_data_size])
+    test_data = datasetMutiIndx(test_data, indices[seed_data_size:])
+
+    bb = BlackBox(target_model=target_model, substitute_model=subModel,
+                  seed_data=seed_data,
+                  test_data=test_data,
+                  step_size=step_size,
+                  max_iter=max_iter, submodel_epoch=submodel_epoch,device=device)
+
+    print("substitute training....")
+    bb.substitute_training()
+    adversary = FGSM(bb.substitute_model, eps=eps, target_type=blackBox.TRUELABEL)
+    succeed_adv_samples = bb.do_craft(adversary, ConcatDataset([train_data, test_data]), save_path=save_path)
+    adv_laoder = DataLoader(dataset=succeed_adv_samples)
+    samples_filter(model=bb.substitute_model, loader=adv_laoder, name='substitue model')
+    samples_filter(model=target_model, loader=adv_laoder, name='source model')
 
 
-def do_craft_cw(prefix_model_path, prefix_save_path, model_list,is_save=False, c=0.8, iter=10000,
-                batch_size=1, source_data=None, data_type=None,device='cpu'):
-    for model_name in model_list:
-        save_folder = model_name.split('.')[0]+'-'+str(c)+'-'+str(iter)
-        model_path = os.path.join(prefix_model_path, model_name)
-        save_path = os.path.join(prefix_save_path, save_folder)
-        print('>>>>Generate {} >>>>>>>>>>'.format(model_name))
-        if data_type == DATA_IMAGENET:
-            genereate_cw_samples_for_large_data(model_path, source_data, save_path, is_save=is_save, c=c, iter=iter,
-                                                batch_size=batch_size,
-                                                data_type=data_type)
-        else:
-            genereate_cw_samples(model_path, source_data, save_path, is_save=is_save, c=c, iter=iter,
-                                 batch_size=batch_size,
-                                 data_type=data_type,device=device)
+def parametersParse(arg):
 
+    if isinstance(arg,list):
+        return [parametersParse(ele) for ele in arg if ele.strip()!=""]
 
-def do_craft_jsma(prefix_model_path, prefix_save_path, model_list,is_save=False, max_distortion=0.12,
-                  dim_features=784,
-                  num_out=10, source_data=None, data_type=None,device='cpu'):
-    for model_name in model_list:
-        save_folder = model_name.split('.')[0]+'-'+str(max_distortion)
-        model_path = os.path.join(prefix_model_path, model_name)
-        save_path = os.path.join(prefix_save_path, save_folder)
-        print('>>>>Generate {} >>>>>>>>>>'.format(model_name))
-        if data_type == DATA_IMAGENET:
-            genereate_jsma_samples_for_large_data(model_path, source_data, save_path, is_save, max_distortion,
-                                                  dim_features,
-                                                  num_out, data_type=data_type, img_shape={'C': 3, 'H': 224, 'W': 224})
-        else:
-            genereate_jsma_samples(model_path, source_data, save_path, is_save, max_distortion, dim_features,
-                                   num_out, data_type=data_type,device=device)
+    if arg.lower() == "true":
+        return True
+    if arg.lower() == "false":
+        return False
+    import re
+    int_pattern = re.compile("^(\d)+$")
+    float_patter = re.compile("^(\d)+\.(\d)+$")
 
+    if int_pattern.match(arg) is not None:
+        return  int(arg)
+    if float_patter.match(arg) is not None:
+        return float(arg)
+    raise Exception("Warinings:Unsupported data type. {}".format(arg))
 
-def do_craft_deepfool(prefix_model_path, prefix_save_path, model_list, source_data, data_type):
-    for model_name in model_list:
-        save_folder = model_name.split('.')[0]+'-'+str(0.02)+'-'+str(50)
-        model_path = os.path.join(prefix_model_path, model_name)
-        save_path = os.path.join(prefix_save_path, save_folder)
-        logging.info('>>>>Generate {} >>>>>>>>>>'.format(model_name))
-        if data_type == DATA_IMAGENET:
-            genereate_deepfool_samples_for_large_data(model_path, source_data_path=source_data, save_path=save_path,
-                                                      data_type=data_type,
-                                                      num_out=1000)
-        else:
-            genereate_deepfool_samples(model_path, source_data_path=source_data, save_path=save_path,
-                                       data_type=data_type,
-                                       num_out=10)
+def run():
 
+    parser = argparse.ArgumentParser(description="The required parameters of mutation process")
 
-def craft_mnist():
-    source_data = '../../datasets/mnist/raw'
-    data_type = DATA_MNIST
-    setup_logging()
-    prefix_model_path = '../model-storage/mnist/hetero-base/'
-    model_list = ['MnistNet4.pkl']
+    parser.add_argument("--modelName", type=str,
+                        help="The model's name,e.g, googlenet, lenet",
+                        default="lenet")
+    parser.add_argument("--modelPath", type=str,
+                        help="The the path of pretrained targeted model.Note, the model should be saved as the form model.stat_dict")
+    parser.add_argument("--dataType", type=int,
+                        help="The data set that the given model is tailored to. Three types are available: mnist,0; "
+                             "cifar10, 1", default=0, required=True)
+    parser.add_argument("--sourceDataPath", type=str,
+                        help="The path of source data which is used to yield adversarial sampels",
+                        required=True)
+    parser.add_argument("--attackType", type=str,
+                        help="Five attacks are available: fgsm, jsma, bb, deepfool, cw",
+                        required=True)
+    parser.add_argument("--attackParameters", type=str,
+                        help="The parameters for specific attack.fgsm:",
+                        required=True)
+    parser.add_argument("--savePath", type=str, help="The path where the adversarial samples to be stored",
+                        required=True)
+    parser.add_argument("--device", type=int,
+                        help="The index of GPU used. If -1 is assigned,then only cpu is available",
+                        required=True)
 
-    is_save = True
-    # prefix_save_path = '../../datasets/mnist/adversarial/fgsm/single/pure/'
-    # eps = 0.35
-    # adv_folder_list = ['mnist4-eta3']
-    # do_craft_fgsm(prefix_model_path, prefix_save_path, model_list, adv_folder_list, eps=eps,is_save=True)
+    args = parser.parse_args()
+    attackParameters = parametersParse(args.attackParameters.split(","))
 
-    adv_folder_list = ['mnist4-c8-i1w']
-    prefix_save_path = '../../datasets/mnist/adversarial/cw/single/pure'
-    do_craft_cw(prefix_model_path, prefix_save_path, model_list, save_folder_list=adv_folder_list,
-                is_save=True, c=0.6, iter=80000, batch_size=2,device='cuda')
+    if args.modelName == "googlenet":
+        seed_model = GoogLeNet()
+    elif args.modelName == "lenet":
+        seed_model = lenet.MnistNet4()
+    seed_model.load_state_dict(torch.load(args.modelPath))
 
-    # adv_folder_list = ['mnist4-d12']
-    # prefix_save_path = '../../datasets/mnist/adversarial/jsma/single/pure'
-    # do_craft_jsma(prefix_model_path, prefix_save_path, model_list, adv_folder_list, is_save=True, max_distortion=0.12,
-    #               dim_features=784,
-    #               num_out=10)
+    device = "cuda:" + str(args.device) if args.device >= 0 else "cpu"
 
-    # adv_folder_list = ['mnist4-0.02-50']
-    # prefix_save_path = '../../datasets/mnist/adversarial/deepfool/single/pure'
-    # do_craft_deepfool(prefix_model_path, prefix_save_path, model_list, adv_folder_list, source_data,
-    #                   data_type=data_type)
-    # recheck_advsamples(prefix_model_path, prefix_save_path, model_list, adv_folder_list)
+    if args.dataType == DATA_CIFAR10:
+        data_name = 'cifar10'
+        dim_features = 3 * 32 * 32
+        num_out = 10
+        img_shape = {'C': 3, 'H': 32, 'W': 32}
+    elif args.dataType == DATA_MNIST:
+        data_name = 'mnist'
+        dim_features = 28 * 28
+        num_out = 10
+        img_shape = {'C': 1, 'H': 28, 'W': 28}
+    else:
+        raise Exception("{} data set is not supported".format(args.dataType))
 
-    # save_path_list  = ['../../datasets/mnist/adversarial/fgsm/single/pure/',
-    #                    '../../datasets/mnist/adversarial/cw/single/pure',
-    #                    '../../datasets/mnist/adversarial/jsma/single/pure',
-    #                    '../../datasets/mnist/adversarial/bb/single/pure/']
+    args.savePath = os.path.join(args.savePath,current_timestamp().replace(" ",'_'))
 
-    # save_path_list = ['../../datasets/mnist/adversarial/fgsm/single/non-pure/',
-    #                   '../../datasets/mnist/adversarial/cw/single/non-pure/',
-    #                   '../../datasets/mnist/adversarial/jsma/single/non-pure/',
-    #                   '../../datasets/mnist/adversarial/bb/single/non-pure/']
-    #
-    # folder_list = [['mnist4-eta3'], ['mnist4-c8-i1w'], ['mnist4-d12'], ['mnist4-fgsm35']]
-    #
-    # for prefix_save_path, adv_folder_list in zip(save_path_list, folder_list):
-    #     print('delete invalid data:{}'.format(adv_folder_list[0]))
-    #     recheck_advsamples(prefix_model_path, prefix_save_path, model_list, adv_folder_list)
+    if args.attackType == Adv_Tpye.FGSM:
+        numParas=len(attackParameters)
+        assert numParas == 2, "FGSM just need two parameters,but {} found:{}".format(numParas,attackParameters)
+        eps = attackParameters[0]
+        is_exclude_wr = args.attackParameters[1]
+        genereate_fgsm_samples(seed_model, args.sourceDataPath, args.savePath, data_type=args.dataType,
+                               device=device, eps=eps, is_exclude_wr=is_exclude_wr)
 
+    elif args.attackType == Adv_Tpye.JSMA:
+        numParas = len(attackParameters)
+        assert numParas == 1, "JSMA just need one parameter,but {} found:{}".format(numParas,attackParameters)
+        max_distortion = attackParameters[0]
+        genereate_jsma_samples(seed_model, args.sourceDataPath, args.savePath, data_type=args.dataType,
+                               max_distortion=max_distortion, dim_features=dim_features,
+                               num_out=num_out,device=device,img_shape=img_shape)
 
-def craft_cifar10(device):
-    source_data = '../../datasets/cifar10/raw'
-    prefix_model_path = '../model-storage/cifar10/hetero-base/'
-    # model_list = ['lenet.pkl']
-    model_list = ['googlenet.pkl']
-    data_type = DATA_CIFAR10
-    is_save = True
+    elif args.attackType == Adv_Tpye.BB:
+        numParas = len(attackParameters)
+        assert numParas == 5, "BlackBox just need five parameter,but {} found:{}".format(numParas, attackParameters)
+        eps  = attackParameters[0]
+        max_iter = attackParameters[1]
+        submodel_epoch = attackParameters[2]
+        seed_data_size = attackParameters[3]
+        step_size = attackParameters[4]
+        genereate_balck_box_samples(seed_model, args.sourceDataPath,  args.savePath, data_type=args.dataType,eps=eps,
+                                    max_iter=max_iter,submodel_epoch=submodel_epoch, seed_data_size=seed_data_size,
+                                    rnd_seed=random_seed, device=device,step_size=step_size)
 
-def craft_imagenet():
-    # source_data = '../../datasets/cifar10/raw'
-    # prefix_model_path = '../model-storage/cifar10/hetero-base/'
-    # model_list = ['lenet.pkl']
-    # data_type = DATA_CIFAR10
+    elif args.attackType == Adv_Tpye.CW:
+        numParas = len(attackParameters)
+        assert numParas == 2, "CW just need two parameter,but {} found:{}".format(numParas, attackParameters)
+        scaleCoefficient =attackParameters[0]
+        itertaions = attackParameters[1]
 
-    source_data = '../../datasets/ilsvrc12/raw'
-    data_type = DATA_IMAGENET
-    prefix_model_path = 'pretrained'
-    model_list = ['densenet121']
+        genereate_cw_samples(seed_model, args.sourceDataPath, args.savePath, data_type=args.dataType, device=device,
+                             c=scaleCoefficient, iter=itertaions, batch_size=2)
 
-    # prefix_save_path = '../../datasets/ilsvrc12/adversarial/fgsm/single/pure/'
-    # eps = 0.035
-    # adv_folder_list = ['densenet121-eta0.035']
-    # do_craft_fgsm(prefix_model_path, prefix_save_path, model_list, adv_folder_list, eps=eps, is_save=True,
-    #               source_data=source_data, data_type=data_type)
-    # recheck_advsamples(prefix_model_path, prefix_save_path, model_list, adv_folder_list, channels=3,data_type=DATA_IMAGENET)
+    elif args.attackType == Adv_Tpye.DEEPFOOL:
+        numParas = len(attackParameters)
+        assert numParas == 2, "DEEPFOOL just need two parameter,but {} found:{}".format(numParas, attackParameters)
+        overshoot = attackParameters[0]
+        max_iter = attackParameters[1]
+        genereate_deepfool_samples(seed_model, args.sourceDataPath, args.savePath,data_type=args.dataType, overshoot=overshoot,
+                                   num_out=num_out,
+                                   max_iter=max_iter,
+                                   device=device)
+    else:
+        raise Exception("{} is not supported".format(args.attackType))
 
-    # prefix_save_path = '../../datasets/ilsvrc12/adversarial/jsma/single/pure/'
-    # max_distortion = 0.0012
-    # adv_folder_list = ['densenet121-' + str(max_distortion)]
-    # do_craft_jsma(prefix_model_path, prefix_save_path, model_list, adv_folder_list, is_save=True,
-    #               max_distortion=max_distortion,
-    #               dim_features=3 * 224 * 224,
-    #               num_out=1000, source_data=source_data, data_type=DATA_IMAGENET)
-
-    # prefix_save_path = '../../datasets/ilsvrc12/adversarial/cw/single/pure/'
-    # c = 0.6
-    # iter = 1000
-    # adv_folder_list = ['densenet121-' + str(c) + '-' + str(iter)]
-    # do_craft_cw(prefix_model_path, prefix_save_path, model_list, save_folder_list=adv_folder_list,
-    #             is_save=True, c=c, iter=iter, batch_size=2, source_data=source_data, data_type=DATA_IMAGENET)
-
-    # prefix_save_path = '../../datasets/ilsvrc12/adversarial/deepfool/single/pure/'
-    # adv_folder_list = ['densenet121-0.02-50']
-    # do_craft_deepfool(prefix_model_path, prefix_save_path, model_list, adv_folder_list, source_data,
-    #                   data_type=data_type)
-
-
-def mnist_advesaril_refine():
-    model = torch.load('../model-storage/mnist/hetero-base/MnistNet4.pkl')
-
-    #####
-    # bb 2006
-    #####
-    # file_path = '/home/dong/gitgub/SafeDNN/datasets/mnist/adversarial/bb/single/non-pure/mnist4-fgsm35/'
-
-    #####
-    # cw  724
-    #####
-    # file_path = '/home/dong/gitgub/SafeDNN/datasets/mnist/adversarial/cw/single/non-pure/mnist4-c8-i1w'
-
-    ######
-    # df 1116
-    #######
-    file_path  = '/home/dong/gitgub/SafeDNN/datasets/mnist/adversarial/deepfool/single/non-pure/mnist4-0.02-50'
-    ######
-    # fgsm  1934
     ########
-    # file_path = '/home/dong/gitgub/SafeDNN/datasets/mnist/adversarial/fgsm/single/non-pure/mnist4-eta3'
+    # remove the saved deflected adversarial sampels
+    ########
+    rename_advlabel_deflected_img(seed_model, args.savePath, data_description='icse19-eval-attack-{}'.format(args.attackType), img_mode=None, device='cuda',
+                                  data_type=DATA_MNIST)
 
-
-    ##########
-    # jsma 1072
-    #########
-    # file_path =  '/home/dong/gitgub/SafeDNN/datasets/mnist/adversarial/jsma/single/non-pure/mnist4-d12'
-
-    rename_advlabel_deflected_img(model, file_path, data_description='raw dgl-mnist', img_mode=None, device='cuda',
-                                      data_type=DATA_MNIST)
+    print("Adversarial samples are saved in {}".format(args.savePath))
 
 if __name__ == '__main__':
-    setup_logging()
-    device = 'cuda:0'
-    # craft_cifar10(device)
-    # craft_mnist()
-    # craft_imagenet()
-    mnist_advesaril_refine()
+    run()
+    # parametersParse("[]")
+
+
+
