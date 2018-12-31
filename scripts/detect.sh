@@ -43,8 +43,6 @@ seedModelPath seedModelPath
 
 '''
 
-
-
 if test "$choice" = "y"
 then
     # mnsit 0.05 ns,fgsm

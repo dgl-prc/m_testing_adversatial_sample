@@ -97,10 +97,8 @@ class Detector(object):
         total_mutated_model_count = 0
         while (not stop):
             total_mutated_model_count += 1
-
             if total_mutated_model_count > self.max_mutated_numbers:
                 return False, deflected_mutated_model_count, total_mutated_model_count
-
             mutated_model = self.fetch_single_model(total_mutated_model_count)
             mutated_model.eval()
             new_score = mutated_model(img)
@@ -112,3 +110,4 @@ class Detector(object):
                     return True, deflected_mutated_model_count, total_mutated_model_count
                 if pr <= deny_pr:
                     return False, deflected_mutated_model_count, total_mutated_model_count
+

@@ -118,7 +118,7 @@ mnist threshold(ration 0.05):
 
 def run():
     parser = argparse.ArgumentParser("Prarameters for Detection")
-    parser.add_argument("--threshold",type=float,help="The lcr of normal samples. The value is equal to: avg+99%confidence.",required=True)
+    parser.add_argument("--threshold",type=float,help="The lcr_auc of normal samples. The value is equal to: avg+99%confidence.",required=True)
     parser.add_argument("--extendScale",type=float,help="The scale to extend the thrshold",required=True)
     parser.add_argument("--relaxScale",type=float,help="The proportion of threhold,which is useed to control the scale of indifference region",required=True)
     parser.add_argument("--mutatedModelsPath",type=str,help="The path where the pre-mutated models are",required=True)
