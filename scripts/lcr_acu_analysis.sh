@@ -14,8 +14,8 @@ get_char()
     stty $SAVEDSTTY
 }
 
-exe_file=../lcr/lcr_threshold.py
-analyze_file=../lcr/log_analysis.py
+exe_file=../lcr_auc/mutated_testing.py
+analyze_file=../lcr_auc/lcr_auc_analysis.py
 
 echo -e "NOTE: Our experiments are only based on two datasets: mnist and cifar10,\n
          but it is a piece of cake to extend to other datasets only providing a \n
@@ -31,16 +31,20 @@ read choice
 
 if test "$choice" = "y"
 then
-    dataType=1
+    dataType=0
     device=1
-    testType="adv"
     useTrainData="True"
-    batchModelSize=10
-    maxModelsUsed=10
-    mutatedModelsPath="../build-in-resource/mutated_models/cifar10/googlenet/ns/3e-3p/"
-    testSamplesPath="../build-in-resource/dataset/cifar10/adversarial/jsma/"
+    batchModelSize=500
+    maxModelsUsed=500
     seedModelName="lenet"
-    test_result_folder="../lcr-testing-results/cifar10/googlenet/ns/3e-2p/jsma/"
+    mutatedModelsPath="../build-in-resource/mutated_models/mnist/lenet/ns/5e-2p/"
+    testType="adv"  # normal,adv,wl
+    testSamplesPath="../build-in-resource/dataset/mnist/adversarial/cw/"
+    test_result_folder="../lcr_auc-testing-results/mnist/lenet/ns/5e-2p/cw/"
+
+#    testType="normal"  # normal,adv,wl
+#    testSamplesPath="../build-in-resource/dataset/mnist/raw"
+#    test_result_folder="../lcr_auc-testing-results/mnist/lenet/ns/5e-2p/normal/"
     seedModelPath="../build-in-resource/pretrained-model/lenet.pkl"
 else
     python $exe_file --help
@@ -59,19 +63,32 @@ else
 fi
 date=`date +%Y-%m-%d-%H`
 logpath=${test_result_folder}${date}
-if [[ ! -d "$logpath" ]];then
-    mkdir -p $logpath
-fi
 totalbatches=$(( $(( $maxModelsUsed / $batchModelSize )) + $(( $maxModelsUsed % $batchModelSize )) ))
 
 is_adv="True"
 if test "$testType" = "normal"
 then
     is_adv="False"
+    read -p "Please input the path to save lcr results:" lcrSavePath
+else
+    echo "Please provide the lcr result of normal samples for the auc computinglease test."
+    read -p "Do you have the lcr results of normal samples?(y/n)" choice
+    if test "$choice" = "y"
+    then
+        read -p "Path of normal's lcr list:" nrLcrPath
+    else
+        echo "Please gain the lcr lsit of normal samples first.You can achieve this using this script"
+        exit
+    fi
 fi
 
 echo "=======>Please Check Parameters<======="
-    echo "dataType:" $dataType
+    if test $dataType = 0
+    then
+        echo "dataType:" "mnist"
+    else
+        echo "dataType:" "cifar10"
+    fi
     echo "device:" $device
     echo "testType:" $testType
     echo "useTrainData:" $useTrainData
@@ -84,12 +101,21 @@ echo "=======>Please Check Parameters<======="
     echo "The test will be divided into "$totalbatches" batches"
     echo "The logs will be saved in:" $logpath
     echo "is_adv:" $is_adv
+    if test "$is_adv" = "True"
+    then
+        echo "nrLcrPath:" $nrLcrPath
+    else
+        echo "lcrSavePath:" $lcrSavePath
+    fi
 echo "<======>Parameters=======>"
 
 echo "Press any key to start mutation process"
 echo " CTRL+C break command bash..." # 组合键 CTRL+C 终止命令!
 char=`get_char`
 
+if [[ ! -d "$logpath" ]];then
+    mkdir -p $logpath
+fi
 for((no_batch=1;no_batch<=${totalbatches};no_batch++))
 do
         echo batch:${no_batch}
@@ -109,10 +135,24 @@ do
 done
 
 echo "Testing Done!"
-##############
-# analyze the LCR
-##############
-python -u $analyze_file $logpath $maxModelsUsed $is_adv
+#########################
+# analyze the LCR and AUC
+#########################
+if test "$is_adv" = "True"
+then
+    python -u $analyze_file --logPath $logpath \
+                        --maxModelsUsed $maxModelsUsed \
+                        --isAdv $is_adv \
+                        --nrLcrPath $nrLcrPath
+else
+    python -u $analyze_file --logPath $logpath \
+                    --maxModelsUsed $maxModelsUsed \
+                    --isAdv $is_adv \
+                    --lcrSavePath $lcrSavePath
+fi
+
+
+
 
 
 
