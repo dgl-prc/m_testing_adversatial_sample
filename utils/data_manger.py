@@ -30,7 +30,7 @@ CIFAR10_ADV_FOLDERs_GooGlNet = {'cw': 'googlenet-0.6-1000', 'fgsm': 'googlenet-e
 
 def load_data_set(data_type, source_data, train=False):
     if data_type == DATA_MNIST:
-        test_data = torchvision.datasets.MNIST(root=source_data, train=train, transform=torchvision.transforms.Compose(
+        data = torchvision.datasets.MNIST(root=source_data, train=train, transform=torchvision.transforms.Compose(
             [
                 torchvision.transforms.ToTensor(),
                 normalize_mnist
@@ -38,7 +38,7 @@ def load_data_set(data_type, source_data, train=False):
         ))
         channels = 1
     elif data_type == DATA_CIFAR10:
-        test_data = torchvision.datasets.CIFAR10(root=source_data, train=train,
+        data = torchvision.datasets.CIFAR10(root=source_data, train=train,
                                                  transform=torchvision.transforms.Compose(
                                                      [
                                                          torchvision.transforms.ToTensor(),
@@ -47,7 +47,7 @@ def load_data_set(data_type, source_data, train=False):
                                                  ))
         channels = 3
     elif data_type == DATA_IMAGENET:
-        test_data = torchvision.datasets.ImageFolder(
+        data = torchvision.datasets.ImageFolder(
             source_data,
             transforms.Compose([
                 transforms.RandomResizedCrop(224),
@@ -59,7 +59,7 @@ def load_data_set(data_type, source_data, train=False):
     else:
         raise Exception('Unknown data source')
 
-    return test_data, channels
+    return data, channels
 
 
 def load_cifar10(data_path, split, normalize=normalize_cifar10):
