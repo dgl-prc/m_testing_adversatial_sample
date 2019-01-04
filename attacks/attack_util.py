@@ -7,8 +7,9 @@ from torch.utils.data import TensorDataset
 from torch.autograd.gradcheck import *
 from scipy.misc import imsave
 from utils.data_manger import *
-
-
+import argparse
+from models.lenet import MnistNet4
+from models.googlenet import GoogLeNet
 class Adv_Tpye(object):
     FGSM = 'fgsm'
     JSMA = 'jsma'
@@ -194,7 +195,7 @@ def save_imgs(adv_samples, dataset, save_path, file_prefix, channels=1, batch_si
                                 file_prefix + '_' + str(adv_count) + '_' + str(true_label.item()) + '_' + str(
                                     adv_pred) + '_.png')
         if channels == 1:
-            img = data.numpy()
+            img = data.cpu().numpy()
             img = img.reshape(28, 28)
             imsave(adv_path, img)
         elif channels == 3:
@@ -257,7 +258,7 @@ def rename_advlabel_deflected_img(model, file_path, data_description='raw dgl-ci
     if data_type == DATA_CIFAR10:
         normalize = normalize_cifar10
     elif data_type == DATA_MNIST:
-        normalize = normalize_cifar10
+        normalize = normalize_mnist
     elif data_type == DATA_IMAGENET:
         normalize = normalize_imgNet
 
@@ -270,6 +271,75 @@ def rename_advlabel_deflected_img(model, file_path, data_description='raw dgl-ci
     adv_samples_filter(model, loader, data_description, 'adv', file_path=file_path,
                                     device=device)
 
+def test_adv_samples():
+    parser=argparse.ArgumentParser("Test Adversarial samples")
+    parser.add_argument("--dataType", type=int,
+                        help="The data set that the given model is tailored to. Three types are available: mnist,0; "
+                             "cifar10, 1", default=0, required=True)
+    parser.add_argument("--filePath", type=str,
+                        help="The path of samples to be tested", required=True)
+
+    parser.add_argument("--device", type=int,
+                        help="The index of GPU used. If -1 is assigned,then only cpu is available",
+                        required=True)
+
+    parser.add_argument("--advGround", type=int,
+                        help="1,if use adversarial label as ground truth;0,otherwise",
+                        required=True)
+
+    args = parser.parse_args()
+    use_adv_ground = True if args.advGround == 1 else False
+    device = "cuda:" + str(args.device) if args.device >= 0 else "cpu"
+
+
+    if args.dataType == DATA_CIFAR10:
+        data_name = 'cifar10'
+        dim_features = 3 * 32 * 32
+        num_out = 10
+        img_shape = {'C': 3, 'H': 32, 'W': 32}
+        model = GoogLeNet()
+        modelPath = "../build-in-resource/pretrained-model/googlenet.pkl"
+        normalize = normalize_cifar10
+        img_mode = None
+    elif args.dataType == DATA_MNIST:
+        data_name = 'mnist'
+        dim_features = 28 * 28
+        num_out = 10
+        img_shape = {'C': 1, 'H': 28, 'W': 28}
+        model = MnistNet4()
+        normalize = normalize_mnist
+        modelPath = "../build-in-resource/pretrained-model/lenet.pkl"
+        img_mode = "L"
+    else:
+        raise Exception("{} data set is not supported".format(args.dataType))
+    model.load_state_dict(torch.load(modelPath))
+    model = model.to(device)
+    model.eval()
+    if os.path.isdir(args.filePath):
+        dataset = MyDataset(root=args.filePath, transform=transforms.Compose([
+            transforms.ToTensor(),
+            normalize
+        ]), show_file_name=True, img_mode=img_mode, max_size=10000)
+        dataLoader = DataLoader(dataset, batch_size=1, shuffle=False)
+    else:
+        pass
+    # todo : enabel single sample test
+
+    correct = 0
+    for data_tuple in dataLoader:
+        data, target, adv_label, file_name = data_tuple
+        if use_adv_ground:
+            target = adv_label
+        data, target = data.to(device), target.to(device)
+        output=model(data)
+        pred = output.data.max(1, keepdim=True)[1]
+        rst = pred.eq(target).sum().item()
+        correct+=rst
+        print("{},Adversarial Label:{},Current Predict Label:{}").format(file_name,adv_label.item(),pred.item())
+    print("Total:{},Success:{}".format(len(dataLoader),correct))
+
+
+
 
 
 def get_file_name(old_file_name, new_adv_label):
@@ -281,5 +351,6 @@ def get_file_name(old_file_name, new_adv_label):
 
 if __name__ == '__main__':
     # recheck_advsamples()
-    file_name = 'bb_3351_5_6_.png'
-    print get_file_name(file_name, new_adv_label=1)
+    # file_name = 'bb_3351_5_6_.png'
+    # print get_file_name(file_name, new_adv_label=1)
+    test_adv_samples()
