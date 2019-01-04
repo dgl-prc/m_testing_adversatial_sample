@@ -536,7 +536,7 @@ def run():
         raise Exception("{} is not supported".format(args.attackType))
 
     ########
-    # remove the saved deflected adversarial sampels
+    # remove the saved deflected adversarial samples
     ########
     rename_advlabel_deflected_img(seed_model, args.savePath, data_description='icse19-eval-attack-{}'.format(args.attackType), img_mode=None, device='cuda',
                                   data_type=DATA_MNIST)
