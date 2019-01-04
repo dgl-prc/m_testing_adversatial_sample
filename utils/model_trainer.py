@@ -90,7 +90,7 @@ def train(train_loader, test_loader, epochs, model, optimizer, loss_function, ve
 #######################
 # Example
 #######################
-def train_ad_hoc_model_example(kwargs_train, data_path, save_info={"save": False, "save_path": './'},
+def train_ad_hoc_model_example(kwargs_train, source_data, save_info={"save": False, "save_path": './'},
                                verbose_info={"verbose": True, "log_interval": 10}):
     '''
     This is an example about how to train a model use these artifacts
@@ -106,7 +106,9 @@ def train_ad_hoc_model_example(kwargs_train, data_path, save_info={"save": False
 
     print("------------Train " + kwargs_train["model_name"] + " model------------------")
     model = MnistNet4()
-    train_data, test_data = load_dataset(data_path, split=True)
+    # train_data, test_data = load_dataset(data_path, split=True)
+    train_data, _ = load_data_set(data_type=DATA_MNIST,source_data=source_data,train=True)
+    test_data, _ = load_data_set(data_type=DATA_MNIST,source_data=source_data,train=False)
     train_loader, test_loader = create_data_loader(
         batch_size=64,
         test_batch_size=1000,
@@ -159,8 +161,8 @@ def train_mnist_model(kwargs_train, data_path, save_info={"save": False, "save_p
     model = MnistNet4()
 
     print("------------Train " + kwargs_train["model_name"] + " model------------------")
-
-    train_data, test_data = load_dataset(data_path, split=True)
+    train_data, _ = load_data_set(data_type=DATA_MNIST,source_data=data_path,train=True)
+    test_data, _ = load_data_set(data_type=DATA_MNIST,source_data=data_path,train=False)
     train_loader, test_loader = create_data_loader(
         batch_size=64,
         test_batch_size=1000,
@@ -236,9 +238,10 @@ def train_mnist_disjoint_data():
     :return:
     '''
     seed = 5599
-
     torch.manual_seed(seed)
-    ori_train_data, test_data = load_dataset('../datasets/mnist/raw', split=True)
+    data_path='../datasets/mnist/raw'
+    ori_train_data, _ = load_data_set(data_type=DATA_MNIST,source_data=data_path,train=True)
+    test_data, _ = load_data_set(data_type=DATA_MNIST,source_data=data_path,train=False)
 
     rState = np.random.RandomState(seed)
     size = len(ori_train_data)
