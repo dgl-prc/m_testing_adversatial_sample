@@ -99,8 +99,7 @@ class CarliniL2(AbstractAdversary):
         batch_size = inputs.size()[0]
         torch.manual_seed(random_seed)
         inputs = inputs.to(self.device)
-        weight_data = torch.zeros(*inputs.size()).to(self.device)
-        W = torch.tensor(weight_data,requires_grad=True)
+        W = torch.zeros(*inputs.size(),device=self.device,requires_grad=True)
         optimizer = torch.optim.Adam([W], lr=self.lr)
         for iter in range(self.max_iter):
             optimizer.zero_grad()
@@ -115,7 +114,6 @@ class CarliniL2(AbstractAdversary):
         return craft_x
 
 
-# to do: design a test pip line
 if __name__ == '__main__':
     import torchvision
     from utils.data_manger import normalize_mnist
@@ -165,18 +163,6 @@ if __name__ == '__main__':
                     'Success-{}: true_label:{},normal_pred_label:{},adv_label{}'.format(i, real_label, normal_preidct,
                                                                                         adv_label))
                 success_count += 1
-                # img_path = os.path.join('./temp-cw/', str(success_count))
-                # if not os.path.exists(img_path):
-                #     os.mkdir(img_path)
-                #
-                # torchvision.utils.save_image(adv_sample,
-                #                              os.path.join(img_path,
-                #                                           'adv_{}_{}_{}.png'.format(real_label.item(), normal_preidct,
-                #                                                                     adv_label)))
-                # torchvision.utils.save_image(data,
-                #                              os.path.join(img_path, 'normal_{}_{}_{}.png'.format(real_label.item(),
-                #                                                                                  normal_preidct,
-                #                                                                                  adv_label)))
                 is_success = True
                 # break
         if not is_success:
