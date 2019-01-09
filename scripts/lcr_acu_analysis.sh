@@ -32,20 +32,32 @@ read choice
 if test "$choice" = "y"
 then
     dataType=0
-    device=1
-    useTrainData="True"
+    device=2
+    useTrainData="False"
     batchModelSize=500
     maxModelsUsed=500
     seedModelName="lenet"
-    mutatedModelsPath="../build-in-resource/mutated_models/mnist/lenet/ns/5e-2p/"
+
+
+#    testType="adv"  # normal,adv,wl
+#    testSamplesPath="../build-in-resource/dataset/mnist/adversarial/deepfool/"
+#    test_result_folder="../lcr_auc-testing-results/mnist/lenet/ns/5e-2p/deepfool/"
+
+    mutatedModelsPath="../build-in-resource/mutated_models/mnist/lenet/gf/5e-2p/"
     testType="adv"  # normal,adv,wl
-    testSamplesPath="../build-in-resource/dataset/mnist/adversarial/cw/"
-    test_result_folder="../lcr_auc-testing-results/mnist/lenet/ns/5e-2p/cw/"
+#    testSamplesPath="../artifacts_eval/adv_samples/mnist/fgsm/2019-01-04_15:45:07"
+#    testSamplesPath="../artifacts_eval/adv_samples/mnist/jsma/2019-01-04_15:48:10"
+#    testSamplesPath="../artifacts_eval/adv_samples/mnist/deepfool/2019-01-04_23:02:21"
+    testSamplesPath="../artifacts_eval/adv_samples/mnist/cw/2019-01-04_22:01:57"
+    test_result_folder="../artifacts_eval/lcr_auc-testing-results/mnist/lenet/gf/5e-2p/cw/2019-01-04_22:01:57"
+
+#    testType="wl"  # normal,adv,wl
+#    testSamplesPath="../build-in-resource/dataset/mnist/raw"
+#    test_result_folder="../lcr_auc-testing-results/mnist/lenet/ns/5e-2p/wl/"
 
 #    testType="normal"  # normal,adv,wl
 #    testSamplesPath="../build-in-resource/dataset/mnist/raw"
 #    test_result_folder="../lcr_auc-testing-results/mnist/lenet/ns/5e-2p/normal/"
-    seedModelPath="../build-in-resource/pretrained-model/lenet.pkl"
 else
     python $exe_file --help
     echo "Tha above is the description of each paprameter. Please input them one by one."
@@ -62,7 +74,7 @@ else
     read -p "maxModelsUsed:" maxModelsUsed
 fi
 date=`date +%Y-%m-%d-%H`
-logpath=${test_result_folder}${date}
+logpath=${test_result_folder}-${date}
 totalbatches=$(( $(( $maxModelsUsed / $batchModelSize )) + $(( $maxModelsUsed % $batchModelSize )) ))
 
 is_adv="True"
@@ -70,12 +82,15 @@ if test "$testType" = "normal"
 then
     is_adv="False"
     read -p "Please input the path to save lcr results:" lcrSavePath
+    read -p "seedModelPath:" seedModelPath
 else
     echo "Please provide the lcr result of normal samples for the auc computinglease test."
     read -p "Do you have the lcr results of normal samples?(y/n)" choice
     if test "$choice" = "y"
     then
         read -p "Path of normal's lcr list:" nrLcrPath
+        seedModelPath=None
+        #  ../build-in-resource/nr-lcr/ns/5e-2p/nrLCR.npy
     else
         echo "Please gain the lcr lsit of normal samples first.You can achieve this using this script"
         exit

@@ -119,6 +119,7 @@ echo "Press any key to start mutation process"
 echo " CTRL+C break command bash..." # 组合键 CTRL+C 终止命令!
 char=`get_char`
 
+echo "Crafting Adversarial Samples...."
 python  -u $exe_file --modelName ${modelName} \
                  --modelPath ${modelPath} \
                  --dataType ${dataType} \
@@ -127,5 +128,7 @@ python  -u $exe_file --modelName ${modelName} \
                  --attackParameters  ${attackParameters} \
                  --savePath  ${savePath} \
                  --device  ${device}
+
+echo "DONE!"
 
 

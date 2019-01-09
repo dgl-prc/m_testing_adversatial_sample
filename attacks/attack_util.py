@@ -10,6 +10,8 @@ from utils.data_manger import *
 import argparse
 from models.lenet import MnistNet4
 from models.googlenet import GoogLeNet
+
+
 class Adv_Tpye(object):
     FGSM = 'fgsm'
     JSMA = 'jsma'
@@ -73,10 +75,11 @@ def adv_samples_filter(model, loader, name, size=0,
         if size > 0 and index == size:
             break
 
-    print('{}: rename {}, remove {},success {}'.format(name,rename_count,remove_count,success_count))
+    print('{}: rename {}, remove {},success {}'.format(name, rename_count, remove_count, success_count))
 
-def samples_filter(model, loader, name, return_type="adv", use_adv_ground=False, size=0, show_progress=False,
-                   device='cpu', is_verbose=False,show_accuracy=True):
+
+def samples_filter(model, loader, name, return_type="adv", size=0, show_progress=False,
+                   device='cpu', is_verbose=False, show_accuracy=True):
     '''
     :param model:
     :param loader:
@@ -107,9 +110,6 @@ def samples_filter(model, loader, name, return_type="adv", use_adv_ground=False,
         elif len(data_tuple) == 4:
             data, target, adv_label, file_name = data_tuple
 
-        if use_adv_ground:
-            target = adv_label
-
         data, target = data.to(device), target.to(device)
 
         if is_verbose:
@@ -127,7 +127,7 @@ def samples_filter(model, loader, name, return_type="adv", use_adv_ground=False,
             logging.info('Predicted Label:{}<<<'.format(pred.item()))
         rst = pred.eq(target).sum().item()
         correct += rst
-        is_adv_success = 0 if rst == 1 else 1
+        is_adv_success = 0 if rst == 1 else 1  # if the predict label is equal to the target label,then the attack is failed
         if is_adv_success:
             adv_samples.append((index, target.item(), pred.item()))
         else:
@@ -148,7 +148,7 @@ def samples_filter(model, loader, name, return_type="adv", use_adv_ground=False,
     test_loss /= size
     if show_accuracy:
         print('\n{}: Average loss: {:.4f}, Accuracy: {}/{} ({:.2f}%)'.format(
-        name, test_loss, correct, size, 100. * correct / size))
+            name, test_loss, correct, size, 100. * correct / size))
     if return_type == 'adv':
         return adv_samples
     else:
@@ -242,8 +242,6 @@ def save_imgs_tensor(adv_samples, normal_preds, adv_preds, save_path, file_prefi
             imsave(adv_path, img)
 
 
-
-
 def rename_advlabel_deflected_img(model, file_path, data_description='raw dgl-cifar10', img_mode=None, device='cpu',
                                   data_type=DATA_CIFAR10):
     '''
@@ -265,14 +263,15 @@ def rename_advlabel_deflected_img(model, file_path, data_description='raw dgl-ci
     dataset = MyDataset(root=file_path, transform=transforms.Compose([
         transforms.ToTensor(),
         normalize
-    ]), show_file_name=True, img_mode=img_mode,max_size=10000)
+    ]), show_file_name=True, img_mode=img_mode, max_size=10000)
     loader = DataLoader(dataset, batch_size=1, shuffle=False)
     # here, 'adv' means that those sampels whose predict label is not identical to the adv_lable
     adv_samples_filter(model, loader, data_description, 'adv', file_path=file_path,
-                                    device=device)
+                       device=device)
+
 
 def test_adv_samples():
-    parser=argparse.ArgumentParser("Test Adversarial samples")
+    parser = argparse.ArgumentParser("Test Adversarial samples")
     parser.add_argument("--dataType", type=int,
                         help="The data set that the given model is tailored to. Three types are available: mnist,0; "
                              "cifar10, 1", default=0, required=True)
@@ -290,7 +289,6 @@ def test_adv_samples():
     args = parser.parse_args()
     use_adv_ground = True if args.advGround == 1 else False
     device = "cuda:" + str(args.device) if args.device >= 0 else "cpu"
-
 
     if args.dataType == DATA_CIFAR10:
         data_name = 'cifar10'
@@ -315,15 +313,11 @@ def test_adv_samples():
     model.load_state_dict(torch.load(modelPath))
     model = model.to(device)
     model.eval()
-    if os.path.isdir(args.filePath):
-        dataset = MyDataset(root=args.filePath, transform=transforms.Compose([
-            transforms.ToTensor(),
-            normalize
-        ]), show_file_name=True, img_mode=img_mode, max_size=10000)
-        dataLoader = DataLoader(dataset, batch_size=1, shuffle=False)
-    else:
-        pass
-    # todo : enabel single sample test
+    dataset = MyDataset(root=args.filePath, transform=transforms.Compose([
+        transforms.ToTensor(),
+        normalize
+    ]), show_file_name=True, img_mode=img_mode, max_size=10000)
+    dataLoader = DataLoader(dataset, batch_size=1, shuffle=False)
 
     correct = 0
     for data_tuple in dataLoader:
@@ -331,15 +325,12 @@ def test_adv_samples():
         if use_adv_ground:
             target = adv_label
         data, target = data.to(device), target.to(device)
-        output=model(data)
+        output = model(data)
         pred = output.data.max(1, keepdim=True)[1]
         rst = pred.eq(target).sum().item()
-        correct+=rst
-        print("{},Adversarial Label:{},Current Predict Label:{}").format(file_name,adv_label.item(),pred.item())
-    print("Total:{},Success:{}".format(len(dataLoader),correct))
-
-
-
+        correct += rst
+        print("{},Adversarial Label:{},Current Predict Label:{}").format(file_name, adv_label.item(), pred.item())
+    print("Total:{},Success:{}".format(len(dataLoader), correct))
 
 
 def get_file_name(old_file_name, new_adv_label):
@@ -349,8 +340,31 @@ def get_file_name(old_file_name, new_adv_label):
            img_file_split[4]
 
 
+def refine_mnist():
+    modelPath = "../build-in-resource/pretrained-model/lenet.pkl"
+    model = MnistNet4()
+    model.load_state_dict(torch.load(modelPath))
+
+    bb_file_path = "../build-in-resource/dataset/mnist/adversarial/bb/"
+    rename_advlabel_deflected_img(model, bb_file_path, data_description='bb-mnist', img_mode=None, device='cuda:1',
+                                  data_type=DATA_MNIST)
+
+    cw_file_path = "../build-in-resource/dataset/mnist/adversarial/cw/"
+    rename_advlabel_deflected_img(model, cw_file_path, data_description='cw-mnist', img_mode=None, device='cuda:1',
+                                  data_type=DATA_MNIST)
+
+    jsma_file_path = "../build-in-resource/dataset/mnist/adversarial/jsma/"
+    rename_advlabel_deflected_img(model, jsma_file_path, data_description='jsma-mnist', img_mode=None, device='cuda:2',
+                                  data_type=DATA_MNIST)
+
+    dp_file_path = "../build-in-resource/dataset/mnist/adversarial/deepfool/"
+    rename_advlabel_deflected_img(model, dp_file_path, data_description='dp-mnist', img_mode=None, device='cuda:2',
+                                  data_type=DATA_MNIST)
+
+
+    fgsm_file_path = "../build-in-resource/dataset/mnist/adversarial/fgsm/"
+    rename_advlabel_deflected_img(model, fgsm_file_path, data_description='fgsm-mnist', img_mode=None, device='cuda:2',
+                                  data_type=DATA_MNIST)
+
 if __name__ == '__main__':
-    # recheck_advsamples()
-    # file_name = 'bb_3351_5_6_.png'
-    # print get_file_name(file_name, new_adv_label=1)
     test_adv_samples()

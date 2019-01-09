@@ -10,7 +10,7 @@ from utils.pytorch_extend import batch_l2Norm_suqare
 
 class CarliniL2(AbstractAdversary):
     '''
-    I only implement the L2 norm
+    only implement the L2 norm
     '''
 
     def __init__(self, target_model, max_iter, c, k=0, lr=1e-3, device='cpu', targeted=False):
@@ -113,59 +113,3 @@ class CarliniL2(AbstractAdversary):
         craft_x = 0.5 * torch.tanh(W + inputs)
         return craft_x
 
-
-if __name__ == '__main__':
-    import torchvision
-    from utils.data_manger import normalize_mnist
-    from utils.logging_util import setup_logging
-    import logging
-
-    setup_logging()
-
-    test_data = torchvision.datasets.MNIST(root='../../datasets/mnist/raw', train=False,
-                                           transform=torchvision.transforms.Compose(
-                                               [
-                                                   torchvision.transforms.ToTensor(),
-                                                   normalize_mnist
-                                               ]
-                                           ))
-
-    target_model = torch.load('../model-storage/mnist/hetero-base/MnistNet4.pkl')
-
-    data_loader = DataLoader(dataset=test_data, batch_size=1)
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    # device = 'cpu'
-    target_model = target_model.to(device)
-    l2Attack = CarliniL2(target_model=target_model, max_iter=10000, c=0.8, k=0, device=device)
-    import time
-    success_count = 0
-    logging.info('start')
-    start=time.clock()
-    for i, data_pair in enumerate(data_loader):
-        data, real_label = data_pair
-        data,real_label = data.to(device),real_label.to(device)
-        scores = target_model(data)
-        normal_preidct = torch.argmax(scores,dim=1,keepdim=True)
-        adv_samples = l2Attack.do_craft(data, normal_preidct)
-        print adv_samples.size()
-        l2Attack.check_adversarial_samples(target_model,adv_samples,real_label)
-        is_success = False
-        labels = range(10)
-        for target in labels:
-            if target == normal_preidct:
-                continue
-            adv_sample = l2Attack.do_craft(data, target)
-            # print adv_sample.get_device()
-            adv_output = target_model(adv_sample)
-            adv_label = torch.argmax(adv_output).item()
-            if adv_label != normal_preidct:
-                logging.info(
-                    'Success-{}: true_label:{},normal_pred_label:{},adv_label{}'.format(i, real_label, normal_preidct,
-                                                                                        adv_label))
-                success_count += 1
-                is_success = True
-                # break
-        if not is_success:
-            logging.info('Failed-{}'.format(i))
-        print time.clock()-start
-        break
