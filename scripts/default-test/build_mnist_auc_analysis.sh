@@ -96,7 +96,7 @@ function aucAnalysis(){
 
 }
 
-
+cd ../
 for op in "ns" "gf" "ws" "nai"
 do
     for attack in "fgsm" "deepfool" "bb" "jsma" "cw"

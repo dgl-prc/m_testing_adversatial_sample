@@ -92,27 +92,6 @@ class DeepFool(AbstractAdversary):
         return pert_image, label, k_i,
 
 
-if __name__ == '__main__':
-    from util.data_manger import load_data_set, DATA_CIFAR10
-    from torch.utils.data.dataloader import DataLoader
-    import sys
-    sys.path.append('../cifar10models/')
-    test_data, channel = load_data_set(data_type=DATA_CIFAR10, source_data='../../datasets/cifar10/raw')
-    loader = DataLoader(dataset=test_data)
-    # model = torch.load('../model-storage/cifar10/hetero-base/lenet.pkl')
-    model = torch.load('../model-storage/cifar10/hetero-base/googlenet.pkl')
-    deepfool = DeepFool(target_model=model)
-    count = 1
-    for data, label in loader:
-        data = data.squeeze(0)
-        adv_img, raw_predict, adv_label = deepfool.do_craft(data)
-        save_imgs_tensor([adv_img.to('cpu')], [label], [adv_label], '../../datasets/cifar10/adversarial-pure/deepf/single/pure', 'df',
-                         channels=channel,no_batch=count)
-        print count
-        count+=1
-        if count > 100:
-            break
-
 
 
 

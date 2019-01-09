@@ -163,50 +163,9 @@ class JSMA(object):
 
 
 
-# print(torch.__version__)
 
-def __single_point_test():
-    img = ndimage.imread('../../datasets/mnist/adversarial/fgsm/single/mnist1/fgsm_1_7_9_.png')
-    transform = transforms.Compose(
-        [
-            transforms.ToTensor(),
-            normalize_mnist
-        ]
-    )
-    # NOTE: transform only accept PIL Image or ndarray, and Tensor is not allowed.
-    # NOTE: we should expand the axis=2 rather than axis=0,which is totally different,since when we train
-    img = transform(np.expand_dims(img, axis=2))
-    jsma.do_craft(img.view(1, 1, 28, 28), 4)
 
-def __large_data_test():
-    train_data,test_data=load_dataset('../../datasets/mnist/raw',split=True)
-    test_data_laoder = DataLoader(dataset=test_data,batch_size=1,shuffle=True)
 
-    success = 0
-    progress = 0
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    all_lables = range(10)
-    for data,label in test_data_laoder:
-        data,label = data.to(device),label.to(device)
-        target_label = jsma.uniform_smaple(label,all_lables)
-        adv_sample, adv_label = jsma.do_craft(data, target_label)
-        if adv_label == target_label:
-            success += 1
-        progress+=1
-        sys.stdout.write('\rprogress:{}%,success:{:.2f}%'.format(100.*progress/len(test_data_laoder),100.*success/progress))
-        sys.stdout.flush()
-    print success*1./progress
 
-if __name__ == '__main__':
 
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    model = torch.load('../model-storage/mnist/hetero-base/MnistNet1.pkl')
-    model = model.to(device)
-
-    jsma = JSMA(model, 0.12, 784, num_out=10, theta=1, optimal=True, verbose=False,device=device)
-    # __single_point_test()
-    start = time.clock()
-    # __large_data_test()
-    __single_point_test()
-    print('time:{.2f}s'.format(time.clock()-start))
 
