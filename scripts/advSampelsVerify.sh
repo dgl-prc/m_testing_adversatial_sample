@@ -8,9 +8,9 @@ device=$3
 advGround=$4
 
 
-python $exe_file  --dataType dataType \
-                  --filePath filePath \
-                  --device device \
-                  --advGround advGround
+python $exe_file  --dataType $dataType \
+                  --filePath $filePath \
+                  --device $device \
+                  --advGround $advGround
 
 
