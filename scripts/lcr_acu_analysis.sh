@@ -32,7 +32,7 @@ read choice
 if test "$choice" = "y"
 then
     dataType=0
-    device=2
+    device=-1
     useTrainData="False"
     batchModelSize=500
     maxModelsUsed=500
