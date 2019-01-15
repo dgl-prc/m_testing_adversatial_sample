@@ -13,7 +13,7 @@ get_char()
     stty echo
     stty $SAVEDSTTY
 }
-
+device=-1
 exe_file=../attacks/craft_adversarial_img.py
 echo -e "NOTE: Our experiments are only based on two datasets: mnist and cifar10,\n
          but it is a piece of cake to extend to other datasets only providing a \n
@@ -85,7 +85,6 @@ then
     else
         savePath="../artifacts_eval/adv_samples/cifar10/"$attackType
     fi
-    device=1
 else
     python $exe_file --help
     echo "Tha above is the description of each paprameter. Please input them one by one."
