@@ -1,5 +1,4 @@
 import sys
-
 sys.path.append('../')
 import logging
 import torch.nn.functional  as F

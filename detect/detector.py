@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from utils.data_manger import random_seed, datasetMutiIndx
 from utils.data_manger import *
 from attacks.attack_util import *
-from model_mutation.operator import OpType
+from model_mutation.mutationOperator import OpType
 from utils.logging_util import setup_logging
 import logging
 import copy
