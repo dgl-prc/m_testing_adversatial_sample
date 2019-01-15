@@ -56,7 +56,7 @@ then
     dataType=0
     testType="adv"
     seedModelPath="../build-in-resource/pretrained-model/lenet.pkl"
-    device=1
+    device=-1
 else
     python $exe_file --help
     echo "Tha above is the description of each paprameter. Please input them one by one."
