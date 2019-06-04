@@ -3,7 +3,7 @@
 
 Code to the paper "Adversarial Sample Detection for Deep Neural Network through Model Mutation Testing" by Jingyi Wang, Guoliang Dong, Jun Sun, Xinyu Wang, Peixin Zhang in ICSE 2019.
 
-The implementations of this artifact is based on pytorch 0.41 with python 2.7. 
+The implementation of this artifact is based on pytorch 0.41 with python 2.7. 
 #Code Structure
 
 This artifact includes four independent modules.
