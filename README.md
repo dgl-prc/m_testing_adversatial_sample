@@ -4,7 +4,8 @@
 Code to the paper "Adversarial Sample Detection for Deep Neural Network through Model Mutation Testing" by Jingyi Wang, Guoliang Dong, Jun Sun, Xinyu Wang, Peixin Zhang in ICSE 2019.
 
 The implementation of this artifact is based on pytorch 0.41 with python 2.7. 
-#Code Structure
+
+# Code Structure
 
 This artifact includes four independent modules.
 
@@ -50,13 +51,13 @@ NOTE: we enable users to specific the required parameters just following the ins
 We recommend using the docker image. See INSTALL file in this directory to get about its useage.
 Now, we assume that one has successfully load the image.
 
-###1. Enter the Work Directory
+### 1. Enter the Work Directory
 To quickly start the experiment, we provide some script for each module in folder "scripts". Just enter the folder and start the experiments.
 
 ```
 cd scripts/
 ```
-###2. Adversarial Samples Generation
+### 2. Adversarial Samples Generation
 
 run the script:
 
@@ -181,7 +182,7 @@ When finished, the last line in the screen is expected be:
 The mutated models are stored in ../artifacts_eval/modelMuation/2019-01-13_13:28:47/gf0.001/lenet
 ```
 
-###4. Label change rate and auc statistics
+### 4. Label change rate and auc statistics
 To get the auc over adversarial samples, we should obtain the lcr of normal samples in advance. In this script, the default setting is designed for calculating adversarial samples. For simplicity, we have placed the lcr of normal samples for all the four operators and the relative path of results are as follows:
 
 ```
@@ -264,7 +265,7 @@ Testing Done!
 >>>>>>>>>>>mnist<<<<<<<<<<<<<<
 Total Samples Used:1000,auc:0.9863,avg_lcr:0.5033,std:0.1711,confidence(95%):0.0106,confidence(98%):0.0126,confidence(99%):0.0140
 ```
-###5. Adversarial Sample Detection
+### 5. Adversarial Sample Detection
 
 Run the script:
 
