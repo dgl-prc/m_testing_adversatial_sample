@@ -1,21 +1,21 @@
 
 # Introduction
 
-Corresponding code to the paper "Adversarial Sample Detection for Deep Neural Network through Model Mutation Testing" by Jingyi Wang, Guoliang Dong, Jun Sun, Xinyu Wang, Peixin Zhang,accepted by ICSE 2019.
+Code to the paper "Adversarial Sample Detection for Deep Neural Network through Model Mutation Testing" by Jingyi Wang, Guoliang Dong, Jun Sun, Xinyu Wang, Peixin Zhang in ICSE 2019.
 
-Implementations of this artifacts in pytorch 0.41 with python 2.7. 
+The implementations of this artifact is based on pytorch 0.41 with python 2.7. 
 #Code Structure
 
-This artifact includes four function modules, each of which is independent.
+This artifact includes four independent modules.
 
 - Adversarial Sample Generation (attacks)
 - Mutation Model Generation (lcr_auc)
 - Label Change Rate(lcr) and AUC over adversarial samples (model_mutation)
 - Adversarial Sample Detection (detect)
 
-*scripts* contains some bash shell files related to the four function modules. The **craftAdvSamples.sh** is used to check if the adversarial samples are valid. The folder **default-test** contains two shell fiels to analyze the lcr and auc over MNIST and CIFAR10 dataset respectively, and the results of auc are listed as follows:
+*scripts* contains some bash shell files related to the four function modules. The **craftAdvSamples.sh** is used to check if the adversarial samples are valid. The folder **default-test** contains two shell files to analyze the LCR and AUROC over MNIST and CIFAR10 dataset respectively, and the results of auc are listed as follows:
 
-#### AUC Report for Cifar10 Data 
+#### AUROC Report for Cifar10 Data 
 attack|NAI|GF|NS|WS
 ---|---|---|---|---
 fgsm|**0.9000**|0.8814|0.7687|0.8476
@@ -24,7 +24,7 @@ cw|**0.9264**|0.9230|0.8499|0.8964
 bb|**0.8707**|0.8370|0.705|0.8076
 df|0.9686|**0.9769**|0.9502|0.9731
 
-#### AUC Report for MNIST Data
+#### AUROC Report for MNIST Data
 attack|NAI|GF|NS|WS
 ---|---|---|---|---
 fgsm|**0.9647**|0.9639|0.9354|0.9515
@@ -38,20 +38,20 @@ df|**0.9862**|0.9837|0.9812|0.9836
 The folder **build-in-resource** contains some essential resources,including: 
 
 - dataset: 
-	- the complete mnist and cifar10 dataset
-	- the adversarial samples with the attack manners described in our paper
+	- the complete MNIST and CIFAR10 dataset
+	- the adversarial samples with the attack methods described in our paper
 - mutated_model: the mutated models used in the paper
-- nr-lcr: the label change rate of legitimate sampels. 
-- pretrained-model: lenet for mnsit,and googlenet for cifar10.
+- nr-lcr: the label change rate of normal sampels. 
+- pretrained-model: Lenet for mnsit,and GooGleNet for cifar10.
 
 # Useage
 NOTE: we enable users to specific the required parameters just following the instructions printed by the shell file.
  
-To quickly start the reviewing work, we recommend using the docker image. See INSTALL file in this directory to get about its useage.
+We recommend using the docker image. See INSTALL file in this directory to get about its useage.
 Now, we assume that one has successfully load the image.
 
 ###1. Enter the Work Directory
-To quickly start the experiment, we provide some script shells for each function modules. Those scripts are placed in folder "scripts". So, enter in it and start our experiments.
+To quickly start the experiment, we provide some script for each module in folder "scripts". Just enter the folder and start the experiments.
 
 ```
 cd scripts/
@@ -69,9 +69,9 @@ You will see the following info:
 To quickly yield adversarial samples, we provide a default setting for each attack manner.Do you want to perform
 an attack with the default settings?y/n
 ```
-You can use the default settings with "y", or specific parameters by yourself with "n". We recommend one to choose "n" firstly to see which parameters are required and setted by the default settings. For the sake of concise, we only demonstrate the useage of default mode.
+You can use the default settings with "y", or specific parameters by yourself with "n". We recommend one to choose "n" firstly to see which parameters are required and the default settings. We demonstrate the useage of default mode here.
 
-Let's back to the useage example, input "y" to continue.
+Back to the useage example, input "y" to continue.
 
 ```
 # you need choose which dataset you want to attack. Here mnist is selected.
@@ -79,7 +79,7 @@ dataType ( [0] mnist; [1] cifar10): 0
 # Then,choose which attac manner you want to use. Here fgsm is selected.
 attackType:fgsm
 ```
-If gose well, you will see the following info after tape "Enter" on the keyboard :
+If everything goes well, you will see the following info after typing "Enter":
 
 ```
 =======>Please Check Parameters<=======
@@ -93,14 +93,14 @@ savePath: ../artifacts_eval/adv_samples/mnist/fgsm
 device: -1
 <======>Parameters=======>
 ```
-If you do not need to alter the settings,then press any key to continue and you will see a log info immediately:
+If you do not need to alter the settings, then press any key to continue and you will see a log info immediately:
 
 ```
 Crafting Adversarial Samples....
 ```
-Note, it maybe take some time to yield the adversarail samples for some attack manners.
+Note, it maybe take some time to generate the adversarail samples for some specific attacks.
 
-Again, if success, the following info will be printed on the screen finally.
+If successful, the following info will be printed on the screen finally.
 
 ```
 successful samples 2054
@@ -146,7 +146,7 @@ To quickly verify the mutation process, we provide a group of default parameters
 program?y/n
 ```
 
-You can use the default settings with "y", or specific parameters by yourself with "n". By default, we choose "GF" as the mutated operator. When defualt settings is selected, the following info will be printed.
+You can use the default settings with "y", or specific parameters by yourself with "n". By default, we choose "GF" as the mutation operator. When the defualt settings is selected, the following info will be printed.
 
 ```
 =======>Parameters<=======
@@ -161,7 +161,7 @@ savePath: ../artifacts_eval/modelMuation/
 device: -1
 <======>Parameters=======>
 ```
-If you do not need to alter the settings,then press any key to continue and logs as follows will be output:
+If you do not need to alter the settings, press any key to continue and the logs as follows will be output:
 
 ```
 2019-01-13 13:28:47,651 - INFO - data type:mnist
@@ -182,7 +182,7 @@ The mutated models are stored in ../artifacts_eval/modelMuation/2019-01-13_13:28
 ```
 
 ###4. Label change rate and auc statistics
-To get the auc over adversarial samples, one should gain the lcr of normal samples in advance. In this script, the default setting is just designed for the adversarial samples,which means the lcr results of normal samples is required. Given the facility of verification, we have placed the lcr of normal samples for all the four operators and the relative path of the those lcr results are as follows:
+To get the auc over adversarial samples, we should obtain the lcr of normal samples in advance. In this script, the default setting is designed for calculating adversarial samples. For simplicity, we have placed the lcr of normal samples for all the four operators and the relative path of results are as follows:
 
 ```
 ../build-in-resource/nr-lcr/mnsit/lenet/gf/5e-2p/nrLCR.npy
@@ -198,7 +198,7 @@ To get the auc over adversarial samples, one should gain the lcr of normal sampl
 
 NOTE: One can always generates his own lcr results with this scripts by setting the parameters.
 
-To be consistent with the examples depicted above, we select the following lcr result. 
+To be consistent with the running example, we select the following lcr result. 
 
 ```
 ../build-in-resource/nr-lcr/mnsit/lenet/gf/5e-2p/nrLCR.npy 
@@ -217,7 +217,7 @@ You will see the following info:
 To quickly label change rate and auc statistics , we provide a group of default parameters，do you want to quickly start the
 program?y/n
 ```
-Then, choose "y" to use the default setting. For demonstration, we only use 10 mutated model to perform lcr and auc statistics. To get the reproduce the results in the paper, one can use scripts placed in the directory "default-test".
+Then, choose "y" to use the default setting. For demonstration, we only use 10 mutated model to perform lcr and auc statistics. To reproduce the results in the paper, one can use scripts placed in the directory "default-test".
 
 Following the below instruction 
 
