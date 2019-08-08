@@ -48,7 +48,7 @@ The folder **build-in-resource** contains some essential resources,including:
 # Useage
 NOTE: we enable users to specific the required parameters just following the instructions printed by the shell file.
  
-We recommend using the [docker](https://cloud.docker.com/u/dgl2019/repository/docker/dgl2019/icse2019-artifacts) image. See INSTALL file in this directory to get about its useage.
+We recommend using the [docker](https://hub.docker.com/r/dgl2019/icse2019-artifacts) image. See INSTALL file in this directory to get about its useage.
 Now, we assume that one has successfully load the image.
 
 ### 1. Enter the Work Directory
