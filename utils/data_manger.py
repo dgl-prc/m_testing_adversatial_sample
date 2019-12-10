@@ -16,8 +16,12 @@ normalize_mnist = transforms.Normalize((0.1307,), (0.3081,))
 
 normalize_cifar10 = transforms.Normalize(mean=[0.4914, 0.4822, 0.4465], std=[0.247, 0.243, 0.261])
 
+<<<<<<< HEAD
 # random_seed = 5566
 random_seed = 7788
+=======
+random_seed = 5566
+>>>>>>> 4052834f1df04c1ea8d67bb049eb1bdb2d82a4e3
 
 DATA_MNIST = 0
 DATA_CIFAR10 = 1
@@ -336,6 +340,10 @@ def datasetMutiIndx(dataset, indices):
         y_list.append(y)
     return torch.utils.data.TensorDataset(torch.cat(x_list, 0), torch.LongTensor(y_list))
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> 4052834f1df04c1ea8d67bb049eb1bdb2d82a4e3
 if __name__ == '__main__':
     file_path = '../../datasets/cifar10/adversarial-pure/fgsm/single/pure/googlenet-eps-0.03'
     dataset = MyDataset(root=file_path, transform=transforms.Compose([

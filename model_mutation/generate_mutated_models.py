@@ -1,11 +1,19 @@
 import sys
 sys.path.append("../")
+<<<<<<< HEAD
 from model_mutation.mutationOperator import *
+=======
+from model_mutation.operator import *
+>>>>>>> 4052834f1df04c1ea8d67bb049eb1bdb2d82a4e3
 from numpy.random import RandomState
 from utils import logging_util
 from utils.data_manger import *
 from utils.time_util import current_timestamp
+<<<<<<< HEAD
 from model_mutation.mutationOperator import OpType as OP_TYPE
+=======
+from model_mutation.operator import OpType as OP_TYPE
+>>>>>>> 4052834f1df04c1ea8d67bb049eb1bdb2d82a4e3
 import argparse
 from models.googlenet import *
 from models.lenet import *

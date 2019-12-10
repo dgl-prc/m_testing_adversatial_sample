@@ -32,7 +32,11 @@ read choice
 if test "$choice" = "y"
 then
     dataType=0
+<<<<<<< HEAD
     device=-1
+=======
+    device=2
+>>>>>>> 4052834f1df04c1ea8d67bb049eb1bdb2d82a4e3
     useTrainData="False"
     batchModelSize=500
     maxModelsUsed=500

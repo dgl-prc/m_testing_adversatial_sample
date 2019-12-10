@@ -2,8 +2,13 @@
 
 function aucAnalysis(){
 
+<<<<<<< HEAD
     exe_file=../../lcr_auc/mutated_testing.py
     analyze_file=../../lcr_auc/lcr_auc_analysis.py
+=======
+    exe_file=../lcr_auc/mutated_testing.py
+    analyze_file=../lcr_auc/lcr_auc_analysis.py
+>>>>>>> 4052834f1df04c1ea8d67bb049eb1bdb2d82a4e3
 
     ####################
     # read parameters
@@ -16,14 +21,24 @@ function aucAnalysis(){
     batchModelSize=500
     maxModelsUsed=500
     seedModelName="lenet"
+<<<<<<< HEAD
     mutatedModelsPath="../../build-in-resource/mutated_models/mnist/lenet/${opType}/5e-2p/"
     nrLcrPath="../../build-in-resource/nr-lcr/${opType}/5e-2p/nrLCR.npy"
+=======
+    mutatedModelsPath="../build-in-resource/mutated_models/mnist/lenet/${opType}/5e-2p/"
+    nrLcrPath="../build-in-resource/nr-lcr/${opType}/5e-2p/nrLCR.npy"
+>>>>>>> 4052834f1df04c1ea8d67bb049eb1bdb2d82a4e3
     seedModelPath=None
     testType="adv"  # normal,adv,wl
 
     device=1
+<<<<<<< HEAD
     testSamplesPath="../../build-in-resource/dataset/mnist/adversarial/${attatck}"
     test_result_folder="../../artifacts_eval/lcr_auc-testing-results/mnist/lenet/${opType}/5e-2p/${attatck}"
+=======
+    testSamplesPath="../build-in-resource/dataset/mnist/adversarial/${attatck}"
+    test_result_folder="../artifacts_eval/lcr_auc-testing-results/mnist/lenet/${opType}/5e-2p/${attatck}"
+>>>>>>> 4052834f1df04c1ea8d67bb049eb1bdb2d82a4e3
     date=`date +%Y-%m-%d-%H`
     logpath=${test_result_folder}-${date}
     totalbatches=$(( $(( $maxModelsUsed / $batchModelSize )) + $(( $maxModelsUsed % $batchModelSize )) ))
@@ -96,6 +111,10 @@ function aucAnalysis(){
 
 }
 
+<<<<<<< HEAD
+=======
+cd ../
+>>>>>>> 4052834f1df04c1ea8d67bb049eb1bdb2d82a4e3
 for op in "ns" "gf" "ws" "nai"
 do
     for attack in "fgsm" "deepfool" "bb" "jsma" "cw"
