@@ -103,9 +103,10 @@ class Detector(object):
             mutated_model.eval()
             new_score = mutated_model(img)
             new_lable = torch.argmax(new_score.cpu()).item()
+            pr = self.calculate_sprt_ratio(deflected_mutated_model_count, total_mutated_model_count)
             if new_lable != origi_label:
                 deflected_mutated_model_count += 1
-                pr = self.calculate_sprt_ratio(deflected_mutated_model_count, total_mutated_model_count)
+                # pr = self.calculate_sprt_ratio(deflected_mutated_model_count, total_mutated_model_count)
                 if pr >= accept_pr:
                     return True, deflected_mutated_model_count, total_mutated_model_count
                 if pr <= deny_pr:

@@ -28,21 +28,6 @@ read choice
 # read parameters
 ####################
 
-'''
-
-threhold threhold
-extendScale extendScale
-relaxScale relaxScale
-mutatedModelsPath mutatedModelsPath
-alpha alpha
-beta beta
-testSamplesPath testSamplesPath
-dataType dataType
-testType testType
-seedModelPath seedModelPath
-
-'''
-
 if test "$choice" = "y"
 then
     # mnsit 0.05 ns,fgsm
@@ -58,7 +43,7 @@ then
     seedModelPath="../build-in-resource/pretrained-model/lenet.pkl"
     device=-1
 else
-    python $exe_file --help
+    python $exe_file -help
     echo "Tha above is the description of each paprameter. Please input them one by one."
     echo
 
@@ -72,7 +57,6 @@ else
     read -p "dataType:" dataType
     read -p "testType:" testType
     read -p "seedModelPath:" seedModelPath
-    read -p "mutatedModelsPath:" mutatedModelsPath
     read -p "device:" device
 
 fi

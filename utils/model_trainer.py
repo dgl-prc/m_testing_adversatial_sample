@@ -9,6 +9,7 @@ import os
 from models.googlenet import *
 from models.lenet import MnistNet4
 import time
+from models.temp_lenet import *
 
 '''
 Todo List:
@@ -158,8 +159,8 @@ def train_mnist_model(kwargs_train, data_path, save_info={"save": False, "save_p
     #     model = MnistNet4()
     # elif model_name == 'MnistNet5':
     #     model = MnistNet5()
-    model = MnistNet4()
-
+    # model = MnistNet4()
+    model = JingyiNet()
     print("------------Train " + kwargs_train["model_name"] + " model------------------")
     train_data, _ = load_data_set(data_type=DATA_MNIST,source_data=data_path,train=True)
     test_data, _ = load_data_set(data_type=DATA_MNIST,source_data=data_path,train=False)
@@ -179,7 +180,7 @@ def train_mnist_model(kwargs_train, data_path, save_info={"save": False, "save_p
             os.makedirs(save_info["save_path"])
         model_name = kwargs_train["model_name"] + '.pkl'
         path = os.path.join(save_info["save_path"], model_name)
-        torch.save(model, path)
+        torch.save(model.state_dict(), path)
 
     print("------------Train End------------------")
 
@@ -282,23 +283,23 @@ def train_mnist_disjoint_data():
 #############
 
 def main():
-    kwargs_train = {"model_name": 'my_model', 'epochs': 100}
+    kwargs_train = {"model_name": 'my_model', 'epochs': 1}
     verbose_info = {"verbose": True, "log_interval": 10}
-    # data_path = '../datasets/mnist/raw'
-    # save_info = {"save": False, "save_path": './model-storage/mnist/hetero-base/'}
-    # model_list = ['MnistNet1', 'MnistNet2', 'MnistNet3', 'MnistNet4', 'MnistNet5']
+    data_path = '../build-in-resource/dataset/mnist/raw/'
+    save_info = {"save": True, "save_path": './'}
+    model_list = ['MnistNet4']
 
-    save_info = {"save": True, "save_path": './model-storage/cifar10/hetero-base/'}
-    data_path = '../datasets/cifar10'
+    # save_info = {"save": True, "save_path": './model-storage/cifar10/hetero-base/'}
+    # data_path = '../datasets/cifar10'
     # model_list = ['vgg', 'lenet', 'googlenet', 'resnet', 'densenet']
-    model_list = ['resnet', 'densenet']
+    # model_list = ['resnet', 'densenet']
 
     for model_name in model_list:
-        kwargs_train['model_name'] = model_name
-        # train_mnist_model(kwargs_train=kwargs_train, data_path=data_path, save_info=save_info,
-        #                            verbose_info=verbose_info)
         start = time.clock()
-        train_cifar_model(kwargs_train, data_path, save_info, verbose_info)
+        kwargs_train['model_name'] = model_name
+        train_mnist_model(kwargs_train=kwargs_train, data_path=data_path, save_info=save_info,
+                                   verbose_info=verbose_info)
+        # train_cifar_model(kwargs_train, data_path, save_info, verbose_info)
         print({'total time:{} min'.format((time.clock() - start) / 60.)})
 
 

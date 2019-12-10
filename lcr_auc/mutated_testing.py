@@ -115,20 +115,25 @@ def batch_adv_tetsing(device, num_models, seed_data,
     logging.info('>>Test-Details-end-{}>>>{}>>>{}'.format(num_models, adv_type,seed_data))
 
 
+
+
 def batch_legitimate_testing(device, num_models, seed_data, raw_data_path, seed_model,
                              mutated_models_path, model_start_num, use_train=True):
     if seed_data == 'mnist':
         data_type = DATA_MNIST
     elif seed_data == 'cifar10':
         data_type = DATA_CIFAR10
-    data, channel = load_data_set(data_type, raw_data_path, train=use_train)
-    correct_labeled = samples_filter(seed_model, DataLoader(dataset=data), return_type='normal', name='seed model',
-                                     device=device,show_accuracy=False)
-    random_indcies = np.arange(len(correct_labeled))
-    np.random.seed(random_seed)
-    np.random.shuffle(random_indcies)
-    random_indcies = random_indcies[:MAX_NUM_SAMPLES]
-    data = datasetMutiIndx(data, np.array([idx for idx, _, _ in correct_labeled])[random_indcies])
+    # data, channel = load_data_set(data_type, raw_data_path, train=use_train)
+    # correct_labeled = samples_filter(seed_model, DataLoader(dataset=data), return_type='normal', name='seed model',
+    #                                  device=device,show_accuracy=False)
+    # random_indcies = np.arange(len(correct_labeled))
+    # np.random.seed(random_seed)
+    # np.random.shuffle(random_indcies)
+    # random_indcies = random_indcies[:MAX_NUM_SAMPLES]
+    # data = datasetMutiIndx(data, np.array([idx for idx, _, _ in correct_labeled])[random_indcies])
+    #
+    data = load_normal_data(data_type, raw_data_path, use_train=use_train, seed_model=seed_model, device=device, MAX_NUM_SAMPLES=MAX_NUM_SAMPLES)
+
 
     logging.info(
         '>>>>>>>>>>>For {}({}) randomly choose {} with randomseed {}. mutated_models:{}<<<<<<<<<<'.format(
