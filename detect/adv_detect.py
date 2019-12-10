@@ -71,7 +71,6 @@ def get_data_loader(data_path, is_adv_data, data_type):
         normalize = normalize_cifar10
 
     if is_adv_data:
-
         tf = transforms.Compose([transforms.ToTensor(), normalize])
         dataset = MyDataset(root=data_path, transform=tf, img_mode=img_mode, max_size=TEST_SMAPLES)  # mnist
         dataloader = DataLoader(dataset=dataset)
@@ -96,12 +95,13 @@ def get_wrong_label_data_loader(data_path, seed_model, data_type,device):
     return DataLoader(dataset=data)
 
 
-def get_threshold_relax(a, t_scale, r_scale):
-    return a * t_scale, a * r_scale
+def get_threshold_relax(threshold, extend_scale, relax_scale):
+    return threshold * extend_scale, threshold * relax_scale
+
+
 
 
 '''
-
 cifar10 threshold(ration 0.005):
      nai: up_bound = 0.01 * (7.28 + 1.12)
      ns:  up_bound = 0.01 * (1.88 + 0.55) 
@@ -161,7 +161,7 @@ def run():
     else:
         raise Exception("Unsupported test type.")
 
-    print("adverage accuracy:{}, avgerage mutated used:{}".format(avg_accuracy,avg_mutated_used))
+    print("average accuracy:{}, average mutants used:{}".format(avg_accuracy,avg_mutated_used))
 
 
 if __name__=="__main__":

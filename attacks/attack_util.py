@@ -18,6 +18,25 @@ class Adv_Tpye(object):
     DEEPFOOL = 'deepfool'
     CW = 'cw'
 
+def load_natural_data(is_normal, data_type, raw_data_path, use_train, seed_model,device='cpu',MAX_NUM_SAMPLES=1000):
+    data, channel = load_data_set(data_type, raw_data_path, train=use_train)
+    if is_normal:
+        selected_data = samples_filter(seed_model, DataLoader(dataset=data), return_type='normal', name='seed model',
+                                        device=device, show_accuracy=False)
+    else:
+        selected_data = samples_filter(seed_model, DataLoader(dataset=data), return_type='adv', name='seed model',
+                                        device=device, show_accuracy=False)
+
+    random_indcies = np.arange(len(selected_data))
+    np.random.seed(random_seed)
+    np.random.shuffle(random_indcies)
+    random_indcies = random_indcies[:MAX_NUM_SAMPLES]
+    data = datasetMutiIndx(data, np.array([idx for idx, _, _ in selected_data])[random_indcies])
+    return data
+
+
+
+
 
 def adv_samples_filter(model, loader, name, size=0,
                        device='cpu', file_path=False):

@@ -1,21 +1,27 @@
 import torch.nn as nn
 import torch.nn.functional as F
-
+import torch
 
 class Adapter(object):
+    def get_dropout_ouput(self,input):
+        pass
     def last_hd_layer_output(self, x):
         pass
+
     def get_predict_lasth(self,input):
         h = self.last_hd_layer_output(input)
         output = self.model.fc3(h)
-        pred = output.max(1, keepdim=True)[1]
+        pred = torch.squeeze(output.max(1, keepdim=True)[1]).item()
         assert isinstance(pred,int),"return type error"
         return pred,h
 
 
 class MnistNet4Adapter(Adapter):
-    def __init__(self,model):
+    def __init__(self,model,dp=0.5):
         self.model = model
+        self.dropout = nn.Dropout(dp)
+        self.dropout2d = nn.Dropout2d(dp)
+        self.softmax = nn.Softmax()
     def last_hd_layer_output(self, input):
         x = self.model.conv1(input)
         x = self.model.conv2(x)
@@ -24,10 +30,66 @@ class MnistNet4Adapter(Adapter):
         x = F.relu(self.model.fc2(x))
         return x
 
+    def get_dropout_ouput(self,input):
+        '''
+        with a dropout rate of 0.5 after last pooling layer and after the inner-product layer
+        '''
+        x = self.model.conv1(input)
+        x = self.model.conv2(x)
+        x = self.dropout2d(x)
+        x = x.view(x.size(0), -1)
+        x = F.relu(self.model.fc1(x))
+        x = F.relu(self.model.fc2(x))
+        x = self.dropout(x)
+        x = self.model.fc3(x)
+        x = self.softmax(x)
+        return x
+
+
+
+class JingyiNetAdapter(Adapter):
+    def __init__(self,model,dp=0.5):
+        self.model = model
+        self.dropout = nn.Dropout(dp)
+        self.dropout2d = nn.Dropout2d(dp)
+        self.softmax = nn.Softmax()
+    def last_hd_layer_output(self, input):
+        x = self.model.conv1(input)
+        x = self.model.conv2(x)
+        x = x.view(x.size(0), -1)
+        x = self.model.fc1(x)
+        return x
+    def get_predict_lasth(self,input):
+        h = self.last_hd_layer_output(input)
+        output = self.model.fc2(h)
+        pred = torch.squeeze(output.max(1, keepdim=True)[1]).item()
+        assert isinstance(pred,int),"return type error"
+        return pred,h
+
+    def get_dropout_ouput(self,input):
+        '''
+        with a dropout rate of 0.5 after last pooling layer and after the inner-product layer
+        '''
+        x = self.model.conv1(input)
+        x = self.model.conv2(x)
+        x = self.dropout2d(x)
+        x = x.view(x.size(0), -1)
+        x = F.relu(self.model.fc1(x))
+        x = F.relu(self.model.fc2(x))
+        x = self.dropout(x)
+        x = self.model.fc3(x)
+        x = self.softmax(x)
+        return x
+
+
+
 
 class Cifar10NetAdapter(Adapter):
-    def __init__(self,model):
+    def __init__(self,model,dp=0.5):
         self.model = model
+        self.dropout = nn.Dropout(dp)
+        self.dropout2d = nn.Dropout2d(dp)
+        self.softmax = nn.LogSoftmax()
     def last_hd_layer_output(self, input):
         out = F.relu(self.modelconv1(input))
         out = F.max_pool2d(out, 2)
