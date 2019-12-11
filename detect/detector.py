@@ -10,11 +10,7 @@ from torch.utils.data import DataLoader
 from utils.data_manger import random_seed, datasetMutiIndx
 from utils.data_manger import *
 from attacks.attack_util import *
-<<<<<<< HEAD
 from model_mutation.mutationOperator import OpType
-=======
-from model_mutation.operator import OpType
->>>>>>> 4052834f1df04c1ea8d67bb049eb1bdb2d82a4e3
 from utils.logging_util import setup_logging
 import logging
 import copy
@@ -107,16 +103,10 @@ class Detector(object):
             mutated_model.eval()
             new_score = mutated_model(img)
             new_lable = torch.argmax(new_score.cpu()).item()
-<<<<<<< HEAD
             pr = self.calculate_sprt_ratio(deflected_mutated_model_count, total_mutated_model_count)
             if new_lable != origi_label:
                 deflected_mutated_model_count += 1
                 # pr = self.calculate_sprt_ratio(deflected_mutated_model_count, total_mutated_model_count)
-=======
-            if new_lable != origi_label:
-                deflected_mutated_model_count += 1
-                pr = self.calculate_sprt_ratio(deflected_mutated_model_count, total_mutated_model_count)
->>>>>>> 4052834f1df04c1ea8d67bb049eb1bdb2d82a4e3
                 if pr >= accept_pr:
                     return True, deflected_mutated_model_count, total_mutated_model_count
                 if pr <= deny_pr:

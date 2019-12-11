@@ -1,8 +1,4 @@
 import sys
-<<<<<<< HEAD
-=======
-
->>>>>>> 4052834f1df04c1ea8d67bb049eb1bdb2d82a4e3
 sys.path.append('../')
 import logging
 import torch.nn.functional  as F
@@ -22,7 +18,6 @@ class Adv_Tpye(object):
     DEEPFOOL = 'deepfool'
     CW = 'cw'
 
-<<<<<<< HEAD
 def load_natural_data(is_normal, data_type, raw_data_path, use_train, seed_model,device='cpu',MAX_NUM_SAMPLES=1000):
     data, channel = load_data_set(data_type, raw_data_path, train=use_train)
     if is_normal:
@@ -38,12 +33,6 @@ def load_natural_data(is_normal, data_type, raw_data_path, use_train, seed_model
     random_indcies = random_indcies[:MAX_NUM_SAMPLES]
     data = datasetMutiIndx(data, np.array([idx for idx, _, _ in selected_data])[random_indcies])
     return data
-
-
-
-
-=======
->>>>>>> 4052834f1df04c1ea8d67bb049eb1bdb2d82a4e3
 
 def adv_samples_filter(model, loader, name, size=0,
                        device='cpu', file_path=False):

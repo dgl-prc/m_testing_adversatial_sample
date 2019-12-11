@@ -1,9 +1,5 @@
 from __future__ import print_function
 import sys
-<<<<<<< HEAD
-=======
-
->>>>>>> 4052834f1df04c1ea8d67bb049eb1bdb2d82a4e3
 sys.path.append('../')
 from attacks.attack_type.fgsm import FGSM
 from attacks.attack_type.carlinl2 import CarliniL2
@@ -541,11 +537,8 @@ def run():
     ########
     # remove the saved deflected adversarial samples
     ########
-<<<<<<< HEAD
-    rename_advlabel_deflected_img(seed_model, args.savePath, data_description='icse19-eval-attack-{}'.format(args.attackType), img_mode=None, device=device,
-=======
+
     rename_advlabel_deflected_img(seed_model, args.savePath, data_description='icse19-eval-attack-{}'.format(args.attackType), img_mode=None, device='cuda',
->>>>>>> 4052834f1df04c1ea8d67bb049eb1bdb2d82a4e3
                                   data_type=args.dataType)
 
     print("Adversarial samples are saved in {}".format(args.savePath))

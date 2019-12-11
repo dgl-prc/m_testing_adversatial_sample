@@ -71,10 +71,6 @@ def get_data_loader(data_path, is_adv_data, data_type):
         normalize = normalize_cifar10
 
     if is_adv_data:
-<<<<<<< HEAD
-=======
-
->>>>>>> 4052834f1df04c1ea8d67bb049eb1bdb2d82a4e3
         tf = transforms.Compose([transforms.ToTensor(), normalize])
         dataset = MyDataset(root=data_path, transform=tf, img_mode=img_mode, max_size=TEST_SMAPLES)  # mnist
         dataloader = DataLoader(dataset=dataset)
@@ -98,35 +94,22 @@ def get_wrong_label_data_loader(data_path, seed_model, data_type,device):
     data = TensorDataset(data.tensors[0], data.tensors[1], torch.LongTensor(wrong_labels))
     return DataLoader(dataset=data)
 
-
-<<<<<<< HEAD
 def get_threshold_relax(threshold, extend_scale, relax_scale):
     return threshold * extend_scale, threshold * relax_scale
 
-
-
-
-'''
-=======
-def get_threshold_relax(a, t_scale, r_scale):
-    return a * t_scale, a * r_scale
-
-
-'''
-
->>>>>>> 4052834f1df04c1ea8d67bb049eb1bdb2d82a4e3
-cifar10 threshold(ration 0.005):
-     nai: up_bound = 0.01 * (7.28 + 1.12)
-     ns:  up_bound = 0.01 * (1.88 + 0.55) 
-     ws:  up_bound = 0.01 * (2.69 + 0.65) 
-     gf:  up_boun= 0.01 * (4.09 + 0.91) 
-
-mnist threshold(ration 0.05):
-    nai: up_bound = (3.88 + 0.53) * 0.01
-    ns:  up_bound = (0.89 + 0.35) * 0.01
-    ws:  up_bound = (3.83 + 0.42) * 0.01
-    gf:  up_bound = (2.49 + 0.59) * 0.01
-'''
+    '''
+    cifar10 threshold(ration 0.005):
+         nai: up_bound = 0.01 * (7.28 + 1.12)
+         ns:  up_bound = 0.01 * (1.88 + 0.55) 
+         ws:  up_bound = 0.01 * (2.69 + 0.65) 
+         gf:  up_boun= 0.01 * (4.09 + 0.91) 
+    
+    mnist threshold(ration 0.05):
+        nai: up_bound = (3.88 + 0.53) * 0.01
+        ns:  up_bound = (0.89 + 0.35) * 0.01
+        ws:  up_bound = (3.83 + 0.42) * 0.01
+        gf:  up_bound = (2.49 + 0.59) * 0.01
+    '''
 
 
 def run():
@@ -174,11 +157,7 @@ def run():
     else:
         raise Exception("Unsupported test type.")
 
-<<<<<<< HEAD
     print("average accuracy:{}, average mutants used:{}".format(avg_accuracy,avg_mutated_used))
-=======
-    print("adverage accuracy:{}, avgerage mutated used:{}".format(avg_accuracy,avg_mutated_used))
->>>>>>> 4052834f1df04c1ea8d67bb049eb1bdb2d82a4e3
 
 
 if __name__=="__main__":

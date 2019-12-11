@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 *.pyc
 *.tar.gz
 build-in-resource/*
-=======
 
-*.pyc
->>>>>>> 4052834f1df04c1ea8d67bb049eb1bdb2d82a4e3

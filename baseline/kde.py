@@ -2,6 +2,7 @@ from __future__ import division, absolute_import, print_function
 import sys
 sys.path.append("../")
 from sklearn.neighbors import KernelDensity
+from sklearn.preprocessing import scale
 from models.googlenet import GoogLeNet
 from models.lenet import MnistNet4
 from baseline.ModelAdapter import *
@@ -14,7 +15,7 @@ from attacks.attack_util import load_natural_data
 from utils.data_manger import *
 from models.temp_lenet import JingyiNet
 
-BANDWIDTHS = {'mnist': 0.6, 'cifar': 0.26, 'svhn': 1.00}
+BANDWIDTHS = {'mnist': 1.2, 'cifar': 0.26, 'svhn': 1.00}
 MAX_NUM_SAMPLES = 1000 #follow the same setting with lcr.
 
 
@@ -24,8 +25,8 @@ def load_data_model(model_name, dataType, attack_type):
     #############
     # load model
     #############
-    # model_path = "../build-in-resource/pretrained-model/" + dataType + "/lenet.pkl"
-    model_path = "../utils/MnistNet4.pkl"
+    model_path = "../build-in-resource/pretrained-model/" + dataType + "/lenet.pkl"
+    # model_path = "../utils/MnistNet4.pkl"
     advDataPath = "../build-in-resource/dataset/" + dataType + "/adversarial/" + attack_type  # under lenet
 
     ###################
@@ -37,12 +38,12 @@ def load_data_model(model_name, dataType, attack_type):
         data_path = "../build-in-resource/dataset/cifar10/raw"
 
     print("load model.....")
-    # target_model = GoogLeNet() if model_name == "googlenet" else MnistNet4()
-    target_model = JingyiNet()
+    target_model = GoogLeNet() if model_name == "googlenet" else MnistNet4()
+    # target_model = JingyiNet()
     target_model.load_state_dict(torch.load(model_path))
     target_model.eval()
-    # model_adapter = MnistNet4Adapter(target_model)
-    model_adapter = JingyiNetAdapter(target_model)
+    model_adapter = MnistNet4Adapter(target_model)
+    # model_adapter = JingyiNetAdapter(target_model)
 
 
     print("load train data.....")
@@ -226,6 +227,21 @@ def detect_kde(model_name="lenet",dataType = "mnist",attack_type = "jsma"):
     fpr, tpr, thresholds = metrics.roc_curve(y_label, y_score)
     auc_score = metrics.auc(fpr, tpr)
     print('wl------>Detector ROC-AUC score: {:.4f}'.format(auc_score))
+
+
+def normalize(normal, adv):
+    """
+    TODO
+    :param normal:
+    :param adv:
+    :param noisy:
+    :return:
+    """
+    n_samples = len(normal)
+    total = scale(np.concatenate((normal, adv)))
+    return total[:n_samples], total[n_samples:]
+
+
 
 def logistic_regression():
     pass
