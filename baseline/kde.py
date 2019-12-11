@@ -14,6 +14,7 @@ from sklearn import metrics
 from attacks.attack_util import load_natural_data
 from utils.data_manger import *
 from models.temp_lenet import JingyiNet
+from sklearn.linear_model import LogisticRegressionCV
 
 BANDWIDTHS = {'mnist': 1.2, 'cifar': 0.26, 'svhn': 1.00}
 MAX_NUM_SAMPLES = 1000 #follow the same setting with lcr.
@@ -124,16 +125,10 @@ def load_data_model(model_name, dataType, attack_type):
     return train_loader,normal_loader,adv_data_loader, wl_loader, model_adapter
 
 
-def detect_uncerts(model_name="lenet",dataType = "mnist",attack_type = "jsma",p=0.5,iters=50):
-
-    train_loader, test_loader, adv_data_loader, model_adapter = load_data_model(model_name, dataType, attack_type)
-    model_adapter.model.train() # open dropout
-    #########################################
-    # calculate the uncertainty of models
-    #########################################
-    print("calculating uncert of  normal...")
-    normal_uncerts = []
-    for x_test,y_text in test_loader:
+def get_uncerts(data_loader,iters,model_adapter):
+    uncerts = []
+    for item in data_loader:
+        x_test = item[0]
         uncert = []
         for i in range(iters):
             h = model_adapter.get_dropout_ouput(x_test)
@@ -142,19 +137,38 @@ def detect_uncerts(model_name="lenet",dataType = "mnist",attack_type = "jsma",p=
         uncert = np.asarray(uncert)
         uncert = uncert.var(axis=0)
         uncert = uncert.mean(axis=0)
-        normal_uncerts.append(uncert)
+        uncerts.append(uncert)
+    return uncerts
 
-    adv_uncerts = []
+def get_last_hidden_layer(train_loader,model_adapter):
+    last_layer_output = defaultdict(list)
+    for x, label in train_loader:
+        last_h_layer = torch.squeeze(model_adapter.last_hd_layer_output(x)).detach().numpy()
+        last_layer_output[label.item()].append(last_h_layer)
+    return last_layer_output
+
+def get_kde_score(data_loader,model_adapter,kdes):
+    kde_score = []
+    for item in data_loader:
+        x_test = item[0]
+        pred, h = model_adapter.get_predict_lasth(x_test)
+        h = np.reshape(torch.squeeze(h).detach().numpy(), (1, -1))
+        score = kdes[pred].score_samples(h)[0]
+        kde_score.append(score)
+    return kde_score
+
+def detect_uncerts(model_name="lenet",dataType = "mnist",attack_type = "jsma",p=0.5,iters=50):
+
+    train_loader, test_loader, adv_data_loader, model_adapter = load_data_model(model_name, dataType, attack_type)
+    model_adapter.model.train() # open dropout
+    #########################################
+    # calculate the uncertainty of models
+    #########################################
+    print("calculating uncert of  normal...")
+    normal_uncerts = get_uncerts(test_loader,iters,model_adapter)
+
     print("calculating uncert of adversarial...")
-    for x_adv, y_true, y_adv  in adv_data_loader:
-        uncert = []
-        for i in range(iters):
-            h = model_adapter.get_dropout_ouput(x_adv)
-            h = torch.squeeze(h).detach().numpy()
-            uncert.append(h)
-        uncert = np.asarray(uncert)
-        uncert = uncert.var(axis=0).mean(axis=0)
-        adv_uncerts.append(uncert)
+    adv_uncerts = get_uncerts(adv_data_loader,iters,model_adapter)
 
     y_score = normal_uncerts+adv_uncerts
     y_label = [0]*len(normal_uncerts)+[1]*len(adv_uncerts)
@@ -167,10 +181,7 @@ def detect_kde(model_name="lenet",dataType = "mnist",attack_type = "jsma"):
 
     train_loader, test_loader, adv_data_loader, wl_loader, model_adapter = load_data_model(model_name, dataType, attack_type)
 
-    last_layer_output = defaultdict(list)
-    for x, label in train_loader:
-        last_h_layer = torch.squeeze(model_adapter.last_hd_layer_output(x)).detach().numpy()
-        last_layer_output[label.item()].append(last_h_layer)
+    last_layer_output = get_last_hidden_layer(train_loader,model_adapter)
 
     kdes = {}
     print("getting kde models...")
@@ -184,37 +195,16 @@ def detect_kde(model_name="lenet",dataType = "mnist",attack_type = "jsma"):
     # test normal. positive. since density estimate of normal sample is typically bigger.
     #####################################################################################
     print("getting kde score of normal...")
-    for x_test, y_text in test_loader:
-        pred, h = model_adapter.get_predict_lasth(x_test)
-        h = np.reshape(torch.squeeze(h).detach().numpy(), (1, -1))
-        score = kdes[pred].score_samples(h)[0]
-        kde_score["normal"].append(score)
     print("================ked-normal=================")
+    kde_score["normal"] = get_kde_score(test_loader,model_adapter,kdes)
     print(kde_score["normal"])
     ########################################################################
     # test adv. negative. density estimate of adversarial sample is smaller.
     ########################################################################
     print("getting kde score of adversarial...")
-    for x_adv, y_true, y_adv in adv_data_loader:
-        pred, h = model_adapter.get_predict_lasth(x_adv)
-        h = np.reshape(torch.squeeze(h).detach().numpy(), (1, -1))
-        score = kdes[pred].score_samples(h)[0]
-        kde_score["adv"].append(score)
+    kde_score["adv"] = get_kde_score(adv_data_loader,model_adapter,kdes)
     print("================ked-adv=================")
     print(kde_score["adv"])
-
-    ##################################
-    # wl data
-    ##################################
-    print("getting kde score of wl...")
-    for x_adv, y_true in wl_loader:
-        pred, h = model_adapter.get_predict_lasth(x_adv)
-        h = np.reshape(torch.squeeze(h).detach().numpy(), (1, -1))
-        score = kdes[pred].score_samples(h)[0]
-        kde_score["wl"].append(score)
-    print("================ked-adv=================")
-    print(kde_score["wl"])
-
 
     y_score = kde_score["adv"] + kde_score["normal"]
     y_label = [0] * len(kde_score["adv"]) + [1] * len(kde_score["normal"])
@@ -222,16 +212,24 @@ def detect_kde(model_name="lenet",dataType = "mnist",attack_type = "jsma"):
     auc_score = metrics.auc(fpr, tpr)
     print('{}------>Detector ROC-AUC score: {:.4f}'.format(attack,auc_score))
 
-    y_score = kde_score["wl"] + kde_score["normal"]
+    ##################################
+    # wl data
+    ##################################
+    print("getting kde score of wl...")
+    kde_score["wl"] = get_kde_score(wl_loader,model_adapter,kdes)
+    print("================ked-adv=================")
+    print(kde_score["wl"])
+
+    normal_kde,w_kde = normalize(kde_score["normal"],kde_score["wl"] )
+    y_score = w_kde.tolist() + normal_kde.tolist()
     y_label = [0] * len(kde_score["wl"]) + [1] * len(kde_score["normal"])
     fpr, tpr, thresholds = metrics.roc_curve(y_label, y_score)
     auc_score = metrics.auc(fpr, tpr)
     print('wl------>Detector ROC-AUC score: {:.4f}'.format(auc_score))
 
-
 def normalize(normal, adv):
     """
-    TODO
+    On effects on the result.!!!!!!!
     :param normal:
     :param adv:
     :param noisy:
@@ -242,13 +240,84 @@ def normalize(normal, adv):
     return total[:n_samples], total[n_samples:]
 
 
+def train_lr(densities_pos, densities_neg, uncerts_pos, uncerts_neg):
+    """
+    TODO
+    :param densities_pos:
+    :param densities_neg:
+    :param uncerts_pos:
+    :param uncerts_neg:
+    :return:
+    """
+    values_neg = np.concatenate(
+        (densities_neg.reshape((1, -1)),
+         uncerts_neg.reshape((1, -1))),
+        axis=0).transpose([1, 0])
+    values_pos = np.concatenate(
+        (densities_pos.reshape((1, -1)),
+         uncerts_pos.reshape((1, -1))),
+        axis=0).transpose([1, 0])
 
-def logistic_regression():
-    pass
+    values = np.concatenate((values_neg, values_pos))
+    labels = np.concatenate(
+        (np.zeros_like(densities_neg), np.ones_like(densities_pos)))
+
+    lr = LogisticRegressionCV(n_jobs=-1).fit(values, labels)
+
+    return values, labels, lr
+
+def logistic_regression(model_name="lenet",dataType = "mnist",attack_type = "jsma",p=0.5,iters=50):
+
+    train_loader, normal_loader, adv_data_loader, wl_loader, model_adapter = load_data_model(model_name, dataType, attack_type)
+    model_adapter.model.train()  # open dropout
+    #########################################
+    # calculate the uncertainty of models
+    #########################################
+    print("calculating uncert of  normal...")
+    normal_uncerts = get_uncerts(normal_loader,iters,model_adapter)
+
+    print("calculating uncert of adversarial...")
+    adv_uncerts = get_uncerts(adv_data_loader,iters,model_adapter)
+
+    #########################################
+    # calculate the kde
+    #########################################
+    last_layer_output = get_last_hidden_layer(train_loader, model_adapter)
+    kdes = {}
+    print("getting kde models...")
+    for key in last_layer_output.keys():
+        kdes[key] = KernelDensity(kernel='gaussian',
+                                  bandwidth=BANDWIDTHS[dataType]) \
+            .fit(last_layer_output[key])
+
+    kde_score = defaultdict(list)
+    kde_score["normal"] = get_kde_score(normal_loader, model_adapter, kdes)
+    kde_score["adv"] = get_kde_score(adv_data_loader, model_adapter, kdes)
+
+    normal_uncerts, adv_uncerts = normalize(normal_uncerts,adv_uncerts)
+    normal_kde, adv_kde = normalize(kde_score["normal"], kde_score["adv"])
+    values, labels, lr = train_lr(
+            densities_pos=adv_kde,
+            densities_neg=normal_kde,
+            uncerts_pos=adv_uncerts,
+            uncerts_neg=normal_uncerts
+        )
+
+    probs = lr.predict_proba(values)[:, 1]
+    probs_neg =probs[:len(normal_uncerts)]
+    probs_pos =probs[len(normal_uncerts):]
+
+    probs = np.concatenate((probs_neg, probs_pos))
+    labels = np.concatenate((np.zeros_like(probs_neg), np.ones_like(probs_pos)))
+    fpr, tpr, _ = metrics.roc_curve(labels, probs)
+    auc_score = metrics.auc(fpr, tpr)
+    print('LR------>Detector ROC-AUC score: {:.4f}'.format(auc_score))
+
 
 
 if __name__ == "__main__":
      # for attack in ["bb","cw","deepfool","jsma","fgsm"]:
      for attack in ["fgsm"]:
-        detect_kde(model_name="lenet",dataType="mnist",attack_type=attack)
+        # detect_kde(model_name="lenet",dataType="mnist",attack_type=attack)
         # detect_uncerts(model_name="lenet",dataType="mnist",attack_type=attack)
+        logistic_regression(model_name="lenet", dataType="mnist", attack_type="jsma", p=0.5, iters=50)
