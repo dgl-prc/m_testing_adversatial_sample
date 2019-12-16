@@ -10,7 +10,7 @@ class Adapter(object):
 
     def get_predict_lasth(self,input):
         h = self.last_hd_layer_output(input)
-        output = self.model.fc3(h)
+        output = self.output_layer(h)
         pred = torch.squeeze(output.max(1, keepdim=True)[1]).item()
         assert isinstance(pred,int),"return type error"
         return pred,h
@@ -22,6 +22,7 @@ class MnistNet4Adapter(Adapter):
         self.dropout = nn.Dropout(dp)
         self.dropout2d = nn.Dropout2d(dp)
         self.softmax = nn.Softmax()
+        self.output_layer = self.model.fc3
     def last_hd_layer_output(self, input):
         x = self.model.conv1(input)
         x = self.model.conv2(x)
@@ -82,8 +83,6 @@ class JingyiNetAdapter(Adapter):
         return x
 
 
-
-
 class Cifar10NetAdapter(Adapter):
     def __init__(self,model,dp=0.5):
         self.model = model
@@ -99,4 +98,33 @@ class Cifar10NetAdapter(Adapter):
         out = F.relu(self.model.fc1(out))
         out = F.relu(self.model.fc2(out))
         return out
+
+
+
+
+class GooglenetAdapter(Adapter):
+    def __init__(self,model):
+        self.model = model
+        self.output_layer = self.model.linear
+
+    def last_hd_layer_output(self, input):
+        out = self.model.pre_layers(input)
+        out = self.model.a3(out)
+        out = self.model.b3(out)
+        out = self.model.maxpool(out)
+        out = self.model.a4(out)
+        out = self.model.b4(out)
+        out = self.model.c4(out)
+        out = self.model.d4(out)
+        out = self.model.e4(out)
+        out = self.model.maxpool(out)
+        out = self.model.a5(out)
+        out = self.model.b5(out)
+        out = self.model.avgpool(out)
+        out = out.view(out.size(0), -1)
+        return out
+
+
+
+
 
