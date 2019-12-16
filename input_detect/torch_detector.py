@@ -45,11 +45,11 @@ def directory_detect(datasets, attack_type, dir_path, normal, store_path, ad, ta
     )
     if attack_type == "normal":
         print("load normal data.....")
-        normal_data = load_natural_data(True, 0 if datasets == datasets else 1, data_path, use_train=True, seed_model=target_model, device='cpu', MAX_NUM_SAMPLES=MAX_NUM_SAMPLES)
+        normal_data = load_natural_data(True, 0 if datasets == "mnist" else 1, data_path, use_train=True, seed_model=target_model, device='cpu', MAX_NUM_SAMPLES=MAX_NUM_SAMPLES)
         loader = DataLoader(dataset=normal_data)
     elif attack_type == "wl":
         print("load wl data.....")
-        wl_data = load_natural_data(False, 0 if datasets == datasets else 1, data_path, use_train=True, seed_model=target_model, device='cpu', MAX_NUM_SAMPLES=MAX_NUM_SAMPLES)
+        wl_data = load_natural_data(False, 0 if datasets == "mnist" else 1, data_path, use_train=True, seed_model=target_model, device='cpu', MAX_NUM_SAMPLES=MAX_NUM_SAMPLES)
         loader = DataLoader(dataset=wl_data)
     else:
         advDataPath = "../build-in-resource/dataset/" + datasets + "/adversarial/" + attack_type  # under lenet
@@ -177,7 +177,7 @@ def main(argv=None):
     target_model.load_state_dict(torch.load(model_path))
     target_model.eval()
 
-    adv_image_dir = FLAGS.sample_path + dataType + '/' + attack_type + '/test'
+    adv_image_dir = FLAGS.sample_path + dataType + '/adversarial-pure/' + attack_type + '/test'
     if attack_type.__eq__('normal'):
         normal = True
 
@@ -192,6 +192,7 @@ def main(argv=None):
 if __name__ == '__main__':
     flags.DEFINE_string('datasets', 'mnist', 'The target datasets.')
     flags.DEFINE_string('model_name', 'lenet5', 'The path to load model.')
+    flags.DEFINE_string('sample_path', '../build-in-resource/dataset/', 'The path storing samples.')
     flags.DEFINE_string('store_path', '../detection/', 'The path to store result.')
     flags.DEFINE_string('attack_type', 'normal', 'attack_type')
     flags.DEFINE_float('k_nor', 0.0017, 'normal ratio change')

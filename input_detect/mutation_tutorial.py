@@ -60,11 +60,11 @@ def mutation_tutorial(datasets, attack_type, store_path, model_name, test_num=10
 
     if attack_type == "normal":
         print("load normal data.....")
-        normal_data = load_natural_data(True, 0 if datasets == datasets else 1, data_path, use_train=True, seed_model=target_model, device='cpu', MAX_NUM_SAMPLES=MAX_NUM_SAMPLES)
+        normal_data = load_natural_data(True, 0 if datasets == "mnist" else 1, data_path, use_train=True, seed_model=target_model, device='cpu', MAX_NUM_SAMPLES=MAX_NUM_SAMPLES)
         loader = DataLoader(dataset=normal_data)
     elif attack_type == "wl":
         print("load wl data.....")
-        wl_data = load_natural_data(False, 0 if datasets == datasets else 1, data_path, use_train=True, seed_model=target_model, device='cpu', MAX_NUM_SAMPLES=MAX_NUM_SAMPLES)
+        wl_data = load_natural_data(False, 0 if datasets == "mnist" else 1, data_path, use_train=True, seed_model=target_model, device='cpu', MAX_NUM_SAMPLES=MAX_NUM_SAMPLES)
         loader = DataLoader(dataset=wl_data)
     else:
         advDataPath = "../build-in-resource/dataset/" + datasets + "/adversarial/" + attack_type  # under lenet
