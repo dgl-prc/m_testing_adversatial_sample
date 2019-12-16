@@ -9,40 +9,51 @@ from models.lenet import MnistNet4
 from baseline.ModelAdapter import *
 from data_manger import *
 from attack_util import load_natural_data
+from utils import get_data_loader
+# from detect.adv_detect import get_data_loader
 
 FLAGS = flags.FLAGS
+attack_dict = ["fgsm", "jsma", "cw", "df", "bb"]
 
-def directory_detect(datasets, dir_path, normal, store_path, ad, target_model):
-    MAX_NUM_SAMPLES = 1000
-    model_adapter = MnistNet4Adapter(target_model)
+def directory_detect(datasets, attack_type, dir_path, normal, store_path, ad, target_model):
+    MAX_NUM_SAMPLES = 10
+    if datasets == "mnist":
+        model_adapter = MnistNet4Adapter(target_model)
+    else:
+        model_adapter = Cifar10NetAdapter(target_model)
 
     print('--- Extracting images from: ', dir_path)
-    # if normal:
-        # [adv_image_list, adv_image_files, real_labels, predicted_labels] = utils.get_normal_data_mutation_test(dir_path)
-    # else:
-        # [adv_image_list, adv_image_files, real_labels, predicted_labels] = utils.get_data_mutation_test(dir_path)
+
 
     #########################################################
     # load data. use training data to denote the submanifold.
     #########################################################
-    data_path = "../build-in-resource/dataset/mnist/raw"
-    train_data, _ = load_data_set(data_type=DATA_MNIST, source_data=data_path, train=True)
-    test_data, _ = load_data_set(data_type=DATA_MNIST, source_data=data_path, train=False)
-    # adv_data_loader = get_data_loader(advDataPath, is_adv_data=True, data_type=dataType)
+    if datasets == "mnist":
+        data_path = "../build-in-resource/dataset/mnist/raw"
+        train_data, _ = load_data_set(data_type=DATA_MNIST, source_data=data_path, train=True)
+        test_data, _ = load_data_set(data_type=DATA_MNIST, source_data=data_path, train=False)
+    else:
+        data_path = "../build-in-resource/dataset/cifar10/raw"
+        train_data, _ = load_data_set(data_type=DATA_CIFAR10, source_data=data_path, train=True)
+        test_data, _ = load_data_set(data_type=DATA_CIFAR10, source_data=data_path, train=False)
+
     train_loader, test_loader = create_data_loader(
         batch_size=1,
         test_batch_size=1,
         train_data=train_data,
         test_data=test_data
     )
-
-    print("load normal data.....")
-    normal_data = load_natural_data(True, 0 if datasets == "mnist" else 1, data_path, use_train=True, seed_model=target_model, device='cpu', MAX_NUM_SAMPLES=MAX_NUM_SAMPLES)
-    normal_loader = DataLoader(dataset=normal_data)
-
-    print("load wl data.....")
-    wl_data = load_natural_data(False, 0 if datasets == "mnist" else 1, data_path, use_train=True, seed_model=target_model, device='cpu', MAX_NUM_SAMPLES=MAX_NUM_SAMPLES)
-    wl_loader = DataLoader(dataset=wl_data)
+    if attack_type == "normal":
+        print("load normal data.....")
+        normal_data = load_natural_data(True, 0 if datasets == datasets else 1, data_path, use_train=True, seed_model=target_model, device='cpu', MAX_NUM_SAMPLES=MAX_NUM_SAMPLES)
+        loader = DataLoader(dataset=normal_data)
+    elif attack_type == "wl":
+        print("load wl data.....")
+        wl_data = load_natural_data(False, 0 if datasets == datasets else 1, data_path, use_train=True, seed_model=target_model, device='cpu', MAX_NUM_SAMPLES=MAX_NUM_SAMPLES)
+        loader = DataLoader(dataset=wl_data)
+    else:
+        advDataPath = "../build-in-resource/dataset/" + datasets + "/adversarial/" + attack_type  # under lenet
+        loader = get_data_loader(advDataPath, is_adv_data=True, data_type=datasets)
 
     adv_count = 0
     not_decided_images = 0
@@ -58,7 +69,12 @@ def directory_detect(datasets, dir_path, normal, store_path, ad, target_model):
     detector_results = []
     summary_results = []
     i = 0
-    for x_test, y_test in wl_loader:
+    for item in loader:
+        if attack_type not in attack_dict:
+            x_test, _ = item
+        else:
+            x_test, _, _ = item
+
         orig_label, _ = model_adapter.get_predict_lasth(x_test)
         [result, decided, total_mutation_count, label_change_mutation_count] = ad.detect(x_test, orig_label,
                                                                                          model_adapter)
@@ -154,14 +170,7 @@ def main(argv=None):
 
     print('--- Dataset: ', dataType, 'attack type: ', attack_type)
 
-    # model_path = "../../torch_model/" + dataType + "/lenet.pkl"
-    model_path = "../build-in-resource/pretrained-model/" + dataType + "/lenet.pkl"
-    advDataPath = "../build-in-resource/dataset/" + dataType + "/adversarial/" + attack_type
-    #
-    # if dataType == "mnist":
-    #     data_path = "../build-in-resource/dataset/mnist/raw"
-    # else:
-    #     data_path = "../build-in-resource/dataset/cifar10/raw"
+    model_path = "../build-in-resource/pretrained-model/" + dataType + "/" + model_name + ".pkl"
 
     target_model = GoogLeNet() if model_name == "googlenet" else MnistNet4()
 
@@ -178,16 +187,11 @@ def main(argv=None):
     # Detection
     ad = detector(k_nor, mu, image_rows, image_cols, level, rgb, max_mutations, alpha, beta, k_nor*indifference_region_ratio)
     print('--- Detector config: ', ad.print_config())
-    directory_detect(dataType, adv_image_dir, normal, store_path, ad, target_model)
+    directory_detect(dataType, attack_type, adv_image_dir, normal, store_path, ad, target_model)
 
 if __name__ == '__main__':
-    # flags.DEFINE_string('datasets', 'mnist', 'The target datasets.')
-    # flags.DEFINE_string('model_path', '../models/integration/mnist', 'The path to load model.')
-    # flags.DEFINE_string('sample_path', '../datasets/experiment/mnist', 'The path storing samples.')
     flags.DEFINE_string('datasets', 'mnist', 'The target datasets.')
     flags.DEFINE_string('model_name', 'lenet5', 'The path to load model.')
-    flags.DEFINE_string('epoch', 9, 'The epoch of model for use.')
-    flags.DEFINE_string('sample_path', '/Users/pxzhang/Downloads/nMutant_backup_server_tacas/datasets/experiment_tacas/', 'The path storing samples.')
     flags.DEFINE_string('store_path', '../detection/', 'The path to store result.')
     flags.DEFINE_string('attack_type', 'normal', 'attack_type')
     flags.DEFINE_float('k_nor', 0.0017, 'normal ratio change')

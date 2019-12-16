@@ -29,25 +29,28 @@ from baseline.ModelAdapter import *
 FLAGS = flags.FLAGS
 
 MAX_NUM_SAMPLES = 1000
-def mutation_tutorial(datasets, attack, store_path, model_name, test_num=100, mutated=False):
-    model_path = "../build-in-resource/pretrained-model/" + datasets + "/lenet.pkl"
-    advDataPath = "../build-in-resource/dataset/" + datasets + "/adversarial/" + attack
-    #
-    # if dataType == "mnist":
-    #     data_path = "../build-in-resource/dataset/mnist/raw"
-    # else:
-    #     data_path = "../build-in-resource/dataset/cifar10/raw"
+def mutation_tutorial(datasets, attack_type, store_path, model_name, test_num=100, mutated=False):
+    model_path = "../build-in-resource/pretrained-model/" + datasets + "/" + model_name + ".pkl"
+    advDataPath = "../build-in-resource/dataset/" + datasets + "/adversarial/" + attack_type
 
     target_model = GoogLeNet() if model_name == "googlenet" else MnistNet4()
 
     target_model.load_state_dict(torch.load(model_path))
     target_model.eval()
-    model_adapter = MnistNet4Adapter(target_model)
+    if datasets == "mnist":
+        model_adapter = MnistNet4Adapter(target_model)
+    else:
+        model_adapter = Cifar10NetAdapter(target_model)
 
-    data_path = "../build-in-resource/dataset/mnist/raw"
-    train_data, _ = load_data_set(data_type=DATA_MNIST, source_data=data_path, train=True)
-    test_data, _ = load_data_set(data_type=DATA_MNIST, source_data=data_path, train=False)
-    # adv_data_loader = get_data_loader(advDataPath, is_adv_data=True, data_type=dataType)
+    if datasets == "mnist":
+        data_path = "../build-in-resource/dataset/mnist/raw"
+        train_data, _ = load_data_set(data_type=DATA_MNIST, source_data=data_path, train=True)
+        test_data, _ = load_data_set(data_type=DATA_MNIST, source_data=data_path, train=False)
+    else:
+        data_path = "../build-in-resource/dataset/cifar10/raw"
+        train_data, _ = load_data_set(data_type=DATA_CIFAR10, source_data=data_path, train=True)
+        test_data, _ = load_data_set(data_type=DATA_CIFAR10, source_data=data_path, train=False)
+
     train_loader, test_loader = create_data_loader(
         batch_size=1,
         test_batch_size=1,
@@ -55,15 +58,17 @@ def mutation_tutorial(datasets, attack, store_path, model_name, test_num=100, mu
         test_data=test_data
     )
 
-    print("load normal data.....")
-    normal_data = load_natural_data(True, 0 if datasets == "mnist" else 1, data_path, use_train=True,
-                                    seed_model=target_model, device='cpu', MAX_NUM_SAMPLES=MAX_NUM_SAMPLES)
-    normal_loader = DataLoader(dataset=normal_data)
-
-    print("load wl data.....")
-    wl_data = load_natural_data(False, 0 if datasets == "mnist" else 1, data_path, use_train=True,
-                                seed_model=target_model, device='cpu', MAX_NUM_SAMPLES=MAX_NUM_SAMPLES)
-    wl_loader = DataLoader(dataset=wl_data)
+    if attack_type == "normal":
+        print("load normal data.....")
+        normal_data = load_natural_data(True, 0 if datasets == datasets else 1, data_path, use_train=True, seed_model=target_model, device='cpu', MAX_NUM_SAMPLES=MAX_NUM_SAMPLES)
+        loader = DataLoader(dataset=normal_data)
+    elif attack_type == "wl":
+        print("load wl data.....")
+        wl_data = load_natural_data(False, 0 if datasets == datasets else 1, data_path, use_train=True, seed_model=target_model, device='cpu', MAX_NUM_SAMPLES=MAX_NUM_SAMPLES)
+        loader = DataLoader(dataset=wl_data)
+    else:
+        advDataPath = "../build-in-resource/dataset/" + datasets + "/adversarial/" + attack_type  # under lenet
+        loader = get_data_loader(advDataPath, is_adv_data=True, data_type=datasets)
 
     # Generate random matution matrix for mutations
     store_path = store_path + attack + '/' + datasets + '/'
@@ -82,15 +87,15 @@ def mutation_tutorial(datasets, attack, store_path, model_name, test_num=100, mu
         mutation_test = MutationTest(img_rows, img_cols)
         mutation_test.mutation_generate(mutated, store_path, utils.generate_value_3)
 
-    store_string, result = mutation_test.mutation_test_adv(wl_loader, result, test_num, model_adapter)
+    store_string, result = mutation_test.mutation_test_adv(loader, attack_type, result, test_num, model_adapter)
 
-    with open(store_path + "/adv_result.csv", "w") as f:
+    with open(store_path + "/" + attack_type + "_result.csv", "w") as f:
         f.write(store_string)
 
-    store_string, result = mutation_test.mutation_test_ori(normal_loader, result, test_num, model_adapter)
-
-    with open(store_path + "/ori_result.csv", "w") as f:
-        f.write(store_string)
+    # store_string, result = mutation_test.mutation_test_ori(normal_loader, result, test_num, model_adapter)
+    #
+    # with open(store_path + "/ori_result.csv", "w") as f:
+    #     f.write(store_string)
 
     with open(store_path + "/result.csv", "w") as f:
         f.write(result)
@@ -100,7 +105,7 @@ def mutation_tutorial(datasets, attack, store_path, model_name, test_num=100, mu
 
 def main(argv=None):
     mutation_tutorial(datasets=FLAGS.datasets,
-                      attack=FLAGS.attack,
+                      attack_type=FLAGS.attack,
                       store_path=FLAGS.store_path,
                       model_name=FLAGS.model_name,
                       test_num=FLAGS.test_num,

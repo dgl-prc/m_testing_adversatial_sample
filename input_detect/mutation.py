@@ -10,7 +10,7 @@ import torch
 
 from input_detect.utils import c_occl, c_light, c_black
 
-
+attack_dict = ["fgsm", "jsma", "cw", "df", "bb"]
 class MutationTest:
 
     '''
@@ -68,16 +68,18 @@ class MutationTest:
                 self.mutations.append(mutation)
             np.save(path + "/mutation_list.npy", self.mutations)
 
-    def mutation_test_adv(self, data, result, test_num, model_adapter, mutate=False):
+    def mutation_test_adv(self, data, attack, result, test_num, model_adapter):
         store_string = ''
-        mutated = False
-
         label_change_numbers = []
 
         # Iterate over all the test data
         # count = 0
         i = 0
-        for x,y in data:
+        for item in data:
+            if attack not in attack_dict:
+                x, _ = item
+            else:
+                x, _, _ = item
             if i >= test_num:
                 break
             orig_label,_ = model_adapter.get_predict_lasth(x)
@@ -106,47 +108,46 @@ class MutationTest:
         adv_average = round(np.mean(label_change_numbers), 2)
         adv_std = np.std(label_change_numbers)
         adv_99ci = round(2.576 * adv_std / math.sqrt(len(label_change_numbers)), 2)
-        result = result + 'adv,' + str(adv_average) + ',' + str(round(adv_std, 2)) + ',' + str(adv_99ci) + '\n'
+        result = result + attack + ',' + str(adv_average) + ',' + str(round(adv_std, 2)) + ',' + str(adv_99ci) + '\n'
 
         return store_string, result
 
-    def mutation_test_ori(self, data, result, test_num, model_adapter, mutate=False):
-        store_string = ''
-
-        label_change_numbers = []
-        # Iterate over all the test data
-        i = 0
-        for x, y in data:
-            if i >= test_num:
-                break
-            orig_label,_ = model_adapter.get_predict_lasth(x)
-            label_changes = 0
-            ori_img = x.numpy()
-            mu_labels = []
-            for j in range(self.mutation_number):
-                t_img = ori_img.copy()
-                mutation_img = t_img + (self.mutations[j].reshape((1, 1, 28, 28)).astype(
-                    np.float32) - 0.1307) / 0.3081 * self.level  # mnist(1,1,28,28)
-
-                # mutation_img = torch.from_numpy((mutation_img - 0.1307) / 0.3081)
-                mutation_img = torch.from_numpy(mutation_img)
-                mu_label, _ = model_adapter.get_predict_lasth(mutation_img)
-
-                mu_labels.append(mu_label)
-            for mu_label in mu_labels:
-                if mu_label != int(orig_label):
-                    label_changes += 1
-
-            label_change_numbers.append(label_changes)
-            # pxzhang
-            store_string = store_string + str(i) + "," + str(orig_label) + "," + str(label_changes) + "\n"
-            i += 1
-
-        label_change_numbers = np.asarray(label_change_numbers)
-        adv_average = round(np.mean(label_change_numbers), 2)
-        adv_std = np.std(label_change_numbers)
-        adv_99ci = round(2.576 * adv_std / math.sqrt(len(label_change_numbers)), 2)
-        result = result + 'ori,' + str(adv_average) + ',' + str(round(adv_std, 2)) + ',' + str(adv_99ci) + '\n'
-
-        return store_string, result
+    # def mutation_test_ori(self, data, result, test_num, model_adapter):
+    #     store_string = ''
+    #     label_change_numbers = []
+    #     # Iterate over all the test data
+    #     i = 0
+    #     for x, y in data:
+    #         if i >= test_num:
+    #             break
+    #         orig_label,_ = model_adapter.get_predict_lasth(x)
+    #         label_changes = 0
+    #         ori_img = x.numpy()
+    #         mu_labels = []
+    #         for j in range(self.mutation_number):
+    #             t_img = ori_img.copy()
+    #             mutation_img = t_img + (self.mutations[j].reshape((1, 1, 28, 28)).astype(
+    #                 np.float32) - 0.1307) / 0.3081 * self.level  # mnist(1,1,28,28)
+    #
+    #             # mutation_img = torch.from_numpy((mutation_img - 0.1307) / 0.3081)
+    #             mutation_img = torch.from_numpy(mutation_img)
+    #             mu_label, _ = model_adapter.get_predict_lasth(mutation_img)
+    #
+    #             mu_labels.append(mu_label)
+    #         for mu_label in mu_labels:
+    #             if mu_label != int(orig_label):
+    #                 label_changes += 1
+    #
+    #         label_change_numbers.append(label_changes)
+    #         # pxzhang
+    #         store_string = store_string + str(i) + "," + str(orig_label) + "," + str(label_changes) + "\n"
+    #         i += 1
+    #
+    #     label_change_numbers = np.asarray(label_change_numbers)
+    #     adv_average = round(np.mean(label_change_numbers), 2)
+    #     adv_std = np.std(label_change_numbers)
+    #     adv_99ci = round(2.576 * adv_std / math.sqrt(len(label_change_numbers)), 2)
+    #     result = result + 'ori,' + str(adv_average) + ',' + str(round(adv_std, 2)) + ',' + str(adv_99ci) + '\n'
+    #
+    #     return store_string, result
 
