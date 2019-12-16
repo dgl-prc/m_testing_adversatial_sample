@@ -86,9 +86,16 @@ class MutationTest:
             label_changes = 0
             ori_img = x.numpy()
             mu_labels = []
+            rgb = False
+            if self.mutations.shape[-1] != 1:
+                rgb = True
             for j in range(self.mutation_number):
                 t_img = ori_img.copy()
-                mutation_img = t_img + (self.mutations[j].reshape((1, 1, 28, 28)).astype(np.float32) - 0.1307)/ 0.3081 * self.level  # mnist(1,1,28,28)
+                if rgb:
+                    mutation_matrix = (self.mutations[j].reshape((1, 32, 32, 3)).astype(np.float32) - [0.4914, 0.4822,0.4465]) / [0.247, 0.243, 0.261] * self.level
+                    mutation_img = t_img + np.transpose(mutation_matrix, [0, 3, 1, 2])
+                else:
+                    mutation_img = t_img + (self.mutations[j].reshape((1, 1, 28, 28)).astype(np.float32) - 0.1307)/ 0.3081 * self.level  # mnist(1,1,28,28)
 
                 # mutation_img = torch.from_numpy((mutation_img - 0.1307) / 0.3081)
                 mutation_img = torch.from_numpy(mutation_img)

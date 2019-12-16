@@ -84,9 +84,12 @@ class detector:
                 mutation_matrix = mt.mutation_matrix(utils.generate_value_1)
 
             t_img = orig_img.numpy()
-            print(t_img.shape)
 
-            mutation_img = t_img + (mutation_matrix.reshape((1,1,28,28)).astype(np.float32)-0.1307) / 0.3081 * self.step_size #mnist(1,1,28,28)
+            if self.rgb:
+                mutation_matrix = (mutation_matrix.reshape((1, 32, 32, 3)).astype(np.float32) - [0.4914, 0.4822, 0.4465]) / [0.247, 0.243, 0.261] * self.step_size
+                mutation_img = t_img + np.transpose(mutation_matrix, [0,3,1,2])
+            else:
+                mutation_img = t_img + (mutation_matrix.reshape((1,1,28,28)).astype(np.float32)-0.1307) / 0.3081 * self.step_size #mnist(1,1,28,28)
 
             total_mutation_count += 1
 
