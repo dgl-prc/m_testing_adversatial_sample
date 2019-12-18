@@ -1,7 +1,7 @@
 import sys
 sys.path.append("../")
-import tensorflow as tf
-from tensorflow.python.platform import flags
+# import tensorflow as tf
+# from tensorflow.python.platform import flags
 import os
 from input_detect.detection import detector
 from models.googlenet import GoogLeNet
@@ -10,9 +10,10 @@ from baseline.ModelAdapter import *
 from data_manger import *
 from attack_util import load_natural_data
 from utils import get_data_loader
+import argparse
 # from detect.adv_detect import get_data_loader
 
-FLAGS = flags.FLAGS
+# FLAGS = flags.FLAGS
 attack_dict = ["fgsm", "jsma", "cw", "df", "bb"]
 
 def directory_detect(datasets, attack_type, dir_path, normal, store_path, ad, target_model):
@@ -144,16 +145,46 @@ def directory_detect(datasets, attack_type, dir_path, normal, store_path, ad, ta
             'avg_lc_num,' + str(float(sum(label_change_mutation_counts)) / len(label_change_mutation_counts)))
 
 def main(argv=None):
-    dataType = FLAGS.datasets
-    model_name = FLAGS.model_name
-    attack_type = FLAGS.attack_type
-    # pred, _ = model_adapter.get_predict_lasth(x_test)
+    # dataType = FLAGS.datasets
+    # model_name = FLAGS.model_name
+    # attack_type = FLAGS.attack_type
+    #
+    # # detector config
+    # k_nor = FLAGS.k_nor
+    # mu = FLAGS.mu
+    # level = FLAGS.level
+    # max_mutations = FLAGS.max_iteration
+
+    parser = argparse.ArgumentParser("Prarameters for Detection")
+    parser.add_argument("--datasets", type=str,
+                        help="The data set that the given model is tailored to.", default="mnist", required=False)
+    parser.add_argument("--model_name", type=str,
+                        help="The name of given model.", default="lenet", required=False)
+    parser.add_argument("--attack_type", type=str,
+                        help="The name of attack data.", default="normal", required=False)
+    parser.add_argument("--k_nor", type=float,
+                        help="Normal ratio change.", default=0.0017, required=False)
+    parser.add_argument("--mu", type=float,
+                        help="mu parameter of the detection algorithm.", default=1.2, required=False)
+    parser.add_argument("--level", type=int,
+                        help="The level of random mutation region.", default=1, required=False)
+    parser.add_argument("--max_iteration", type=int,
+                        help="Max iteration of mutation.", default=2000, required=False)
+    parser.add_argument("--sample_path", type=str,
+                        help="The path storing samples.", default="../build-in-resource/dataset/", required=False)
+    parser.add_argument("--store_path", type=str,
+                        help="The path to store result.", default="../detection/", required=False)
+    args = parser.parse_args()
+    dataType = args.datasets
+    model_name = args.model_name
+    attack_type = args.attack_type
 
     # detector config
-    k_nor = FLAGS.k_nor
-    mu = FLAGS.mu
-    level = FLAGS.level
-    max_mutations = FLAGS.max_iteration
+    k_nor = args.k_nor
+    mu = args.mu
+    level = args.level
+    max_mutations = args.max_iteration
+
     normal = False
 
     indifference_region_ratio = mu - 1
@@ -177,11 +208,11 @@ def main(argv=None):
     target_model.load_state_dict(torch.load(model_path))
     target_model.eval()
 
-    adv_image_dir = FLAGS.sample_path + dataType + '/adversarial-pure/' + attack_type + '/test'
+    adv_image_dir = args.sample_path + dataType + '/adversarial-pure/' + attack_type + '/test'
     if attack_type.__eq__('normal'):
         normal = True
 
-    store_path = FLAGS.store_path + dataType + '_' + attack_type + '/level=' + str(level)+',mm=' + \
+    store_path = args.store_path + dataType + '_' + attack_type + '/level=' + str(level)+',mm=' + \
                      str(max_mutations) + '/mu=' + str(mu) + ',irr=' + str(indifference_region_ratio)
 
     # Detection
@@ -190,14 +221,15 @@ def main(argv=None):
     directory_detect(dataType, attack_type, adv_image_dir, normal, store_path, ad, target_model)
 
 if __name__ == '__main__':
-    flags.DEFINE_string('datasets', 'mnist', 'The target datasets.')
-    flags.DEFINE_string('model_name', 'lenet5', 'The path to load model.')
-    flags.DEFINE_string('sample_path', '../build-in-resource/dataset/', 'The path storing samples.')
-    flags.DEFINE_string('store_path', '../detection/', 'The path to store result.')
-    flags.DEFINE_string('attack_type', 'normal', 'attack_type')
-    flags.DEFINE_float('k_nor', 0.0017, 'normal ratio change')
-    flags.DEFINE_float('mu', 1.2, 'mu parameter of the detection algorithm')
-    flags.DEFINE_integer('level', 1, 'the level of random mutation region.')
-    flags.DEFINE_integer('max_iteration', 2000, 'max iteration of mutation')
-
-    tf.app.run()
+    main()
+    # flags.DEFINE_string('datasets', 'mnist', 'The target datasets.')
+    # flags.DEFINE_string('model_name', 'lenet5', 'The path to load model.')
+    # flags.DEFINE_string('sample_path', '../build-in-resource/dataset/', 'The path storing samples.')
+    # flags.DEFINE_string('store_path', '../detection/', 'The path to store result.')
+    # flags.DEFINE_string('attack_type', 'normal', 'attack_type')
+    # flags.DEFINE_float('k_nor', 0.0017, 'normal ratio change')
+    # flags.DEFINE_float('mu', 1.2, 'mu parameter of the detection algorithm')
+    # flags.DEFINE_integer('level', 1, 'the level of random mutation region.')
+    # flags.DEFINE_integer('max_iteration', 2000, 'max iteration of mutation')
+    #
+    # tf.app.run()

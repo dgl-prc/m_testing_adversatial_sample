@@ -265,6 +265,28 @@ def input_preprocessing(preds, x, eps, clip_min, clip_max):
 
     return output
 
+def get_data_loader(data_path, is_adv_data, data_type):
+    if data_type == DATA_MNIST:
+        img_mode = 'L'
+        normalize = normalize_mnist
+    else:
+        img_mode = None
+        normalize = normalize_cifar10
+
+    if is_adv_data:
+        tf = transforms.Compose([transforms.ToTensor(), normalize])
+        dataset = MyDataset(root=data_path, transform=tf, img_mode=img_mode, max_size=TEST_SMAPLES)  # mnist
+        dataloader = DataLoader(dataset=dataset)
+    else:
+        dataset, channel = load_data_set(data_type, data_path, False)
+        random_indcies = np.arange(10000)
+        np.random.seed(random_seed)
+        np.random.shuffle(random_indcies)
+        random_indcies = random_indcies[:TEST_SMAPLES]
+        data = datasetMutiIndx(dataset, random_indcies)
+        dataloader = DataLoader(dataset=data)
+    return dataloader
+
 # extract_label_change_ratios('/Users/jingyi/nMutant/mt_result/mnist_jsma/adv_result.csv')
 # extract_label_change_ratios('/Users/jingyi/nMutant/mt_result/mnist_cw/adv_result.csv')
 # extract_label_change_ratios('/Users/jingyi/nMutant/mt_result/mnist_bb/adv_result.csv')

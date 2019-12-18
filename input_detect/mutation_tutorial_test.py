@@ -13,8 +13,8 @@ import os
 import sys
 
 import numpy as np
-import tensorflow as tf
-from tensorflow.python.platform import flags
+# import tensorflow as tf
+# from tensorflow.python.platform import flags
 
 sys.path.append("../")
 import torch
@@ -25,8 +25,9 @@ from attack_util import load_natural_data
 from models.googlenet import GoogLeNet
 from models.lenet import MnistNet4
 from baseline.ModelAdapter import *
+import argparse
 
-FLAGS = flags.FLAGS
+# FLAGS = flags.FLAGS
 
 MAX_NUM_SAMPLES = 1000
 def mutation_tutorial(datasets, attack_type, store_path, model_name, test_num=100, mutated=False):
@@ -104,19 +105,35 @@ def mutation_tutorial(datasets, attack_type, store_path, model_name, test_num=10
 
 
 def main(argv=None):
-    mutation_tutorial(datasets=FLAGS.datasets,
-                      attack_type=FLAGS.attack,
+    parser = argparse.ArgumentParser("Prarameters for Detection")
+    parser.add_argument("--datasets", type=str,
+                        help="The data set that the given model is tailored to.", default="mnist", required=False)
+    parser.add_argument("--model_name", type=str,
+                        help="The name of given model.", default="lenet", required=False)
+    parser.add_argument("--attack_type", type=str,
+                        help="The name of attack data.", default="normal", required=False)
+    parser.add_argument("--test_num", type=int,
+                        help="Number of mutation test targets.", default=100, required=False)
+    parser.add_argument("--mutated", type=bool,
+                        help="The mutation list is already generate.", default=False, required=False)
+    parser.add_argument("--store_path", type=str,
+                        help="The path to store result.", default="../detection/", required=False)
+    args = parser.parse_args()
+
+    mutation_tutorial(datasets=args.datasets,
+                      attack_type=args.attack_type,
                       store_path=FLAGS.store_path,
                       model_name=FLAGS.model_name,
                       test_num=FLAGS.test_num,
                       mutated=FLAGS.mutated)
 
 if __name__ == '__main__':
-    flags.DEFINE_string('datasets', 'mnist', 'The target datasets.')
-    flags.DEFINE_string('attack', 'jsma', 'The type of generating adversaries')
-    flags.DEFINE_boolean('mutated', False, 'The mutation list is already generate.')  # default:False
-    flags.DEFINE_string('model_name', 'lenet4','name of the model')
-    flags.DEFINE_string('store_path', '../results/', 'The path to store results.')
-    flags.DEFINE_integer('test_num', 100, 'Number of mutation test targets')
-
-    tf.app.run()
+    main()
+    # flags.DEFINE_string('datasets', 'mnist', 'The target datasets.')
+    # flags.DEFINE_string('attack_type', 'jsma', 'The type of generating adversaries')
+    # flags.DEFINE_boolean('mutated', False, 'The mutation list is already generate.')  # default:False
+    # flags.DEFINE_string('model_name', 'lenet4','name of the model')
+    # flags.DEFINE_string('store_path', '../results/', 'The path to store results.')
+    # flags.DEFINE_integer('test_num', 100, 'Number of mutation test targets')
+    #
+    # tf.app.run()
